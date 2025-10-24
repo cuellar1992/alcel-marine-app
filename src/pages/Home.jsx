@@ -170,13 +170,14 @@ export default function Home() {
         <JobsPerMonthChart data={jobsPerMonth} loading={loading} />
       </div>
 
-      {/* Activity and Schedule */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activity */}
-        <RecentActivity data={recentActivity} loading={loading} />
-        
-        {/* Vessel Schedule */}
+      {/* Vessel Schedule - Full Width */}
+      <div className="mb-8">
         <VesselSchedule data={vesselSchedule} loading={loading} />
+      </div>
+
+      {/* Recent Activity */}
+      <div className="mb-8">
+        <RecentActivity data={recentActivity} loading={loading} />
       </div>
     </Container>
   )
