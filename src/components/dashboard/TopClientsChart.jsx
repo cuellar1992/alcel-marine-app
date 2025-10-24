@@ -65,8 +65,8 @@ export default function TopClientsChart({ data, loading = false, sortBy = 'reven
               style={{ fontSize: '12px' }}
               width={120}
             />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="value" radius={[0, 8, 8, 0]}>
+            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <Bar dataKey="value" radius={[0, 8, 8, 0]} activeBar={false}>
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
