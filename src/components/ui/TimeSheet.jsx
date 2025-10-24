@@ -8,11 +8,17 @@ import Button from './Button'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 
-const TimeSheet = ({ claimId, isVisible = true }) => {
+const TimeSheet = ({
+  claimId,
+  isVisible = true,
+  forceExpanded = false,
+  hideHeader = false,
+  onHeaderClick = null
+}) => {
   const [entries, setEntries] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(true)
+  const [isCollapsed, setIsCollapsed] = useState(!forceExpanded)
   const [editingId, setEditingId] = useState(null)
   
   // Form data for new entry
@@ -290,28 +296,39 @@ const TimeSheet = ({ claimId, isVisible = true }) => {
 
   if (!isVisible) return null
 
+  // Handle header click
+  const handleHeaderClick = () => {
+    if (onHeaderClick) {
+      onHeaderClick()
+    } else {
+      setIsCollapsed(!isCollapsed)
+    }
+  }
+
   return (
     <div className="bg-slate-800/30 backdrop-blur-xl rounded-xl border border-white/10 p-6">
       {/* Header */}
-      <div 
-        className="flex items-center justify-between cursor-pointer"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        <div className="flex items-center space-x-3">
-          <Clock className="w-5 h-5 text-cyan-400" />
-          <h3 className="text-lg font-semibold text-white">Time Sheet</h3>
-          {summary && (
-            <span className="text-sm text-gray-400">
-              ({summary.formattedTotal})
-            </span>
-          )}
+      {!hideHeader && (
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={handleHeaderClick}
+        >
+          <div className="flex items-center space-x-3">
+            <Clock className="w-5 h-5 text-cyan-400" />
+            <h3 className="text-lg font-semibold text-white">Time Sheet</h3>
+            {summary && (
+              <span className="text-sm text-gray-400">
+                ({summary.formattedTotal})
+              </span>
+            )}
+          </div>
+          <button className="text-gray-400 hover:text-white transition-colors">
+            {isCollapsed ? '▼' : '▲'}
+          </button>
         </div>
-        <button className="text-gray-400 hover:text-white transition-colors">
-          {isCollapsed ? '▼' : '▲'}
-        </button>
-      </div>
+      )}
 
-      {!isCollapsed && (
+      {(!isCollapsed || forceExpanded) && (
         <div className="mt-6 space-y-6">
           {/* Add New Entry Form */}
           <div className="bg-slate-900/50 rounded-lg p-4 border border-white/5">
