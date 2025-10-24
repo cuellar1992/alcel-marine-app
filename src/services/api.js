@@ -407,6 +407,29 @@ export const usersAPI = {
   getStats: () => apiCall('/users/stats'),
 }
 
+// Two-Factor Authentication API
+export const twoFactorAPI = {
+  // Get 2FA status
+  getStatus: () => apiCall('/2fa/status'),
+
+  // Generate 2FA secret and QR code
+  generateSecret: () => apiCall('/2fa/generate', {
+    method: 'POST',
+  }),
+
+  // Enable 2FA with verification token
+  enable: (token) => apiCall('/2fa/enable', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  }),
+
+  // Disable 2FA
+  disable: (password) => apiCall('/2fa/disable', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  }),
+}
+
 // Health check
 export const healthCheck = () => apiCall('/health')
 

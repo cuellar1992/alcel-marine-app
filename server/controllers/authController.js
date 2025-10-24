@@ -84,7 +84,7 @@ export const register = async (req, res) => {
 // Login de usuario
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, twoFactorCode, isBackupCode } = req.body;
 
     // Validar campos requeridos
     if (!email || !password) {
@@ -120,6 +120,32 @@ export const login = async (req, res) => {
       });
     }
 
+    // Si el usuario tiene 2FA habilitado
+    if (user.twoFactorEnabled) {
+      // Si no se proporciona código 2FA, indicar que se requiere
+      if (!twoFactorCode) {
+        return res.status(200).json({
+          success: true,
+          requiresTwoFactor: true,
+          message: '2FA code required.',
+          data: {
+            userId: user._id // Temporal para el siguiente paso
+          }
+        });
+      }
+
+      // Verificar código 2FA
+      const { verifyTwoFactorCode } = await import('./twoFactorController.js');
+      const isCodeValid = await verifyTwoFactorCode(user._id, twoFactorCode, isBackupCode);
+
+      if (!isCodeValid) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid 2FA code.'
+        });
+      }
+    }
+
     // Actualizar último login
     user.lastLogin = new Date();
     await user.save();
@@ -137,7 +163,8 @@ export const login = async (req, res) => {
           email: user.email,
           name: user.name,
           role: user.role,
-          lastLogin: user.lastLogin
+          lastLogin: user.lastLogin,
+          twoFactorEnabled: user.twoFactorEnabled
         },
         accessToken,
         refreshToken
