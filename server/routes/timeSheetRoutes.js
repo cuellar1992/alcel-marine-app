@@ -6,8 +6,13 @@ import {
   deleteTimeSheetEntry,
   getTimeSheetSummary
 } from '../controllers/timeSheetController.js'
+import { authenticate } from '../middleware/authMiddleware.js'
+import { requireAdmin, requireUserOrAdmin } from '../middleware/roleMiddleware.js'
 
 const router = express.Router()
+
+// All routes require authentication
+router.use(authenticate)
 
 // Get all timesheet entries for a claim
 router.get('/:claimId', getTimeSheetEntries)
@@ -16,12 +21,12 @@ router.get('/:claimId', getTimeSheetEntries)
 router.get('/:claimId/summary', getTimeSheetSummary)
 
 // Create a new timesheet entry
-router.post('/', createTimeSheetEntry)
+router.post('/', requireUserOrAdmin, createTimeSheetEntry)
 
 // Update a timesheet entry
-router.put('/:id', updateTimeSheetEntry)
+router.put('/:id', requireUserOrAdmin, updateTimeSheetEntry)
 
 // Delete a timesheet entry
-router.delete('/:id', deleteTimeSheetEntry)
+router.delete('/:id', requireAdmin, deleteTimeSheetEntry)
 
 export default router

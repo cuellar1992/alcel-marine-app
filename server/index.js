@@ -1,11 +1,13 @@
 /**
  * Main Server File
  * Express + MongoDB Backend
+ *
+ * NOTE: Environment variables are loaded by start.js before this file
  */
 
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
+import helmet from 'helmet'
 import connectDB from './config/database.js'
 
 // Import routes
@@ -17,22 +19,35 @@ import jobHistoryRoutes from './routes/jobHistoryRoutes.js'
 import claimRoutes from './routes/claimRoutes.js'
 import timeSheetRoutes from './routes/timeSheetRoutes.js'
 import dashboardRoutes from './routes/dashboardRoutes.js'
+import authRoutes from './routes/authRoutes.js'
+import userManagementRoutes from './routes/userManagementRoutes.js'
 
-// Load environment variables
-dotenv.config()
+// Import middleware
+import { apiLimiter } from './middleware/rateLimiter.js'
 
 // Create Express app
 const app = express()
 
 // Middleware
+app.use(helmet()) // Security headers
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+// Apply rate limiting to all API routes
+app.use('/api/', apiLimiter)
 
 // Connect to MongoDB
 connectDB()
 
 // Routes
+// Auth routes (public - no authentication required)
+app.use('/api/auth', authRoutes)
+
+// User management routes (admin only - protected)
+app.use('/api/users', userManagementRoutes)
+
+// Business routes (protected)
 app.use('/api/jobs', jobRoutes)
 app.use('/api/job-types', jobTypeRoutes)
 app.use('/api/ports', portRoutes)

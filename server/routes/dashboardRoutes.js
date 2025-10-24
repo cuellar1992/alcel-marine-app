@@ -17,8 +17,12 @@ import {
   getJobsPerMonth,
   getJobsByClient
 } from '../controllers/dashboardController.js'
+import { authenticate } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
+
+// All dashboard routes require authentication
+router.use(authenticate)
 
 // Dashboard routes
 router.get('/stats', getDashboardStats)
