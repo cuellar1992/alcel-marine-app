@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { getDeviceFingerprint } from '../utils/deviceFingerprint';
 
 const AuthContext = createContext(null);
 
@@ -40,15 +41,24 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  // Login (con soporte para 2FA)
-  const login = async (email, password, twoFactorCode = null, isBackupCode = false) => {
+  // Login (con soporte para 2FA y dispositivos confiables)
+  const login = async (email, password, twoFactorCode = null, isBackupCode = false, trustDevice = false) => {
     try {
+      const deviceId = getDeviceFingerprint();
+
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, twoFactorCode, isBackupCode }),
+        body: JSON.stringify({
+          email,
+          password,
+          twoFactorCode,
+          isBackupCode,
+          deviceId,
+          trustDevice
+        }),
       });
 
       const data = await response.json();

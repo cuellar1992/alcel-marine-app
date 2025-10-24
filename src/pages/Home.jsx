@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import { Container } from '../components/ui'
-import { 
+import {
   KPICard,
   JobsByStatusChart,
   RevenueTrendsChart,
@@ -17,167 +17,125 @@ import {
   VesselSchedule,
   JobsPerMonthChart
 } from '../components/dashboard'
-import { dashboardAPI } from '../services/api'
-import { 
-  TrendingUp, 
-  FileText, 
-  DollarSign, 
+import { useDashboardCache } from '../context/DashboardCacheContext'
+import {
+  TrendingUp,
+  FileText,
+  DollarSign,
   AlertCircle,
-  Ship,
-  Users,
-  Anchor,
-  Calendar
+  RefreshCw
 } from 'lucide-react'
-import toast from 'react-hot-toast'
 
 export default function Home() {
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState(null)
-  const [jobsByStatus, setJobsByStatus] = useState([])
-  const [revenueTrends, setRevenueTrends] = useState([])
-  const [topClients, setTopClients] = useState([])
-  const [jobsByType, setJobsByType] = useState([])
-  const [shipsByPort, setShipsByPort] = useState([])
-  const [recentActivity, setRecentActivity] = useState([])
-  const [invoiceOverview, setInvoiceOverview] = useState([])
-  const [vesselSchedule, setVesselSchedule] = useState([])
-  const [jobsPerMonth, setJobsPerMonth] = useState([])
+  const { cache, loading, fetchDashboardData, refreshDashboard, isCacheValid } = useDashboardCache()
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
+    // Cargar datos solo si el caché no es válido
     fetchDashboardData()
-  }, [])
+  }, [fetchDashboardData])
 
-  const fetchDashboardData = async () => {
-    setLoading(true)
-    try {
-      // Fetch all dashboard data in parallel
-      const [
-        statsRes,
-        statusRes,
-        trendsRes,
-        clientsRes,
-        typesRes,
-        portsRes,
-        activityRes,
-        invoiceRes,
-        scheduleRes,
-        monthlyRes
-      ] = await Promise.all([
-        dashboardAPI.getStats(),
-        dashboardAPI.getJobsByStatus(),
-        dashboardAPI.getRevenueTrends(12),
-        dashboardAPI.getTopClients(5, 'revenue'),
-        dashboardAPI.getJobsByType(),
-        dashboardAPI.getShipsByPort(),
-        dashboardAPI.getRecentActivity(10),
-        dashboardAPI.getInvoiceOverview(),
-        dashboardAPI.getVesselSchedule(7),
-        dashboardAPI.getJobsPerMonth(new Date().getFullYear())
-      ])
-
-      if (statsRes.success) {
-        console.log('Dashboard Stats:', statsRes.data)
-        setStats(statsRes.data)
-      }
-      if (statusRes.success) setJobsByStatus(statusRes.data)
-      if (trendsRes.success) setRevenueTrends(trendsRes.data)
-      if (clientsRes.success) setTopClients(clientsRes.data)
-      if (typesRes.success) setJobsByType(typesRes.data)
-      if (portsRes.success) setShipsByPort(portsRes.data)
-      if (activityRes.success) setRecentActivity(activityRes.data)
-      if (invoiceRes.success) setInvoiceOverview(invoiceRes.data)
-      if (scheduleRes.success) setVesselSchedule(scheduleRes.data)
-      if (monthlyRes.success) setJobsPerMonth(monthlyRes.data)
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-      toast.error('Failed to load dashboard data')
-    } finally {
-      setLoading(false)
-    }
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await refreshDashboard()
+    setIsRefreshing(false)
   }
 
   return (
     <Container className="py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent mb-2">
-          Dashboard
-        </h1>
-        <p className="text-gray-400">
-          Marine Operations Overview & Analytics
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent mb-2">
+            Dashboard
+          </h1>
+          <p className="text-gray-400">
+            Marine Operations Overview & Analytics
+            {isCacheValid && <span className="ml-2 text-xs text-green-400">● Cached</span>}
+          </p>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing || loading}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-white/10
+            hover:border-cyan-400/30 rounded-lg text-gray-300 hover:text-cyan-400 transition-all duration-300
+            disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Refresh dashboard data"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span className="text-sm">Refresh</span>
+        </button>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <KPICard
           title="Total Jobs & Claims"
-          value={stats?.totalRecords || 0}
+          value={cache?.stats?.totalRecords || 0}
           icon={FileText}
           color="blue"
           loading={loading}
           trend="up"
-          trendValue={`${stats?.totalJobs || 0} jobs, ${stats?.totalClaims || 0} claims`}
+          trendValue={`${cache?.stats?.totalJobs || 0} jobs, ${cache?.stats?.totalClaims || 0} claims`}
         />
         <KPICard
           title="Total Invoice Amount"
-          value={stats?.totalInvoiceAmount ? `$${stats.totalInvoiceAmount.toLocaleString()}` : '$0'}
+          value={cache?.stats?.totalInvoiceAmount ? `$${cache.stats.totalInvoiceAmount.toLocaleString()}` : '$0'}
           icon={DollarSign}
           color="green"
           loading={loading}
         />
         <KPICard
           title="Pending Jobs"
-          value={stats?.pendingJobs || 0}
+          value={cache?.stats?.pendingJobs || 0}
           icon={AlertCircle}
           color="orange"
           loading={loading}
         />
         <KPICard
           title="Issued Invoices"
-          value={stats?.issuedInvoices || 0}
+          value={cache?.stats?.issuedInvoices || 0}
           icon={TrendingUp}
           color="purple"
           loading={loading}
-          trendValue={`${stats?.notIssuedInvoices || 0} not issued`}
+          trendValue={`${cache?.stats?.notIssuedInvoices || 0} not issued`}
         />
       </div>
 
       {/* Main Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Jobs by Status */}
-        <JobsByStatusChart data={jobsByStatus} loading={loading} />
-        
+        <JobsByStatusChart data={cache?.jobsByStatus || []} loading={loading} />
+
         {/* Revenue Trends */}
-        <RevenueTrendsChart data={revenueTrends} loading={loading} />
-        
+        <RevenueTrendsChart data={cache?.revenueTrends || []} loading={loading} />
+
         {/* Top Clients */}
-        <TopClientsChart data={topClients} loading={loading} sortBy="revenue" />
-        
+        <TopClientsChart data={cache?.topClients || []} loading={loading} sortBy="revenue" />
+
         {/* Jobs by Type */}
-        <JobsByTypeChart data={jobsByType} loading={loading} />
-        
+        <JobsByTypeChart data={cache?.jobsByType || []} loading={loading} />
+
         {/* Ships by Port */}
-        <ShipsByPortChart data={shipsByPort} loading={loading} />
-        
+        <ShipsByPortChart data={cache?.shipsByPort || []} loading={loading} />
+
         {/* Invoice Overview */}
-        <InvoiceOverview data={invoiceOverview} loading={loading} />
+        <InvoiceOverview data={cache?.invoiceOverview || []} loading={loading} />
       </div>
 
       {/* Jobs Per Month - Full Width */}
       <div className="mb-8">
-        <JobsPerMonthChart data={jobsPerMonth} loading={loading} />
+        <JobsPerMonthChart data={cache?.jobsPerMonth || []} loading={loading} />
       </div>
 
       {/* Vessel Schedule - Full Width */}
       <div className="mb-8">
-        <VesselSchedule data={vesselSchedule} loading={loading} />
+        <VesselSchedule data={cache?.vesselSchedule || []} loading={loading} />
       </div>
 
       {/* Recent Activity */}
       <div className="mb-8">
-        <RecentActivity data={recentActivity} loading={loading} />
+        <RecentActivity data={cache?.recentActivity || []} loading={loading} />
       </div>
     </Container>
   )
