@@ -1,9 +1,9 @@
 /**
  * Revenue Trends Chart Component
- * Line/Area chart showing net profit trends over time
+ * Area chart showing net profit trends over time (Apache ECharts)
  */
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import ReactECharts from 'echarts-for-react'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -19,8 +19,6 @@ export default function RevenueTrendsChart({ data, loading = false }) {
     )
   }
 
-  console.log('Revenue Trends Data:', data)
-
   const chartData = data.map(item => ({
     month: MONTHS[item.month - 1],
     revenue: item.revenue || 0,
@@ -28,25 +26,126 @@ export default function RevenueTrendsChart({ data, loading = false }) {
     fullDate: `${MONTHS[item.month - 1]} ${item.year}`
   }))
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-lg p-3 shadow-xl">
-          <p className="text-white font-semibold mb-1">{payload[0].payload.fullDate}</p>
-          <p style={{ color: '#22C55E' }} className="text-sm">
-            Net Profit: <span className="font-bold">${payload[0].value.toLocaleString()}</span>
-          </p>
-          <p style={{ color: '#3B82F6' }} className="text-sm">
-            Jobs: <span className="font-bold">{payload[0].payload.count}</span>
-          </p>
-        </div>
-      )
-    }
-    return null
-  }
+  const months = chartData.map(item => item.month)
+  const revenues = chartData.map(item => item.revenue)
+  const counts = chartData.map(item => item.count)
 
-  // Check if we have valid revenue data
   const hasRevenue = chartData.some(item => item.revenue > 0)
+
+  const option = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(17, 24, 39, 0.95)',
+      borderColor: 'rgba(75, 85, 99, 0.5)',
+      borderWidth: 1,
+      textStyle: {
+        color: '#fff',
+        fontSize: 13
+      },
+      padding: 12,
+      formatter: function (params) {
+        const dataIndex = params[0].dataIndex
+        return `
+          <div style="font-weight: bold; margin-bottom: 8px;">${chartData[dataIndex].fullDate}</div>
+          <div style="color: #22C55E;">Net Profit: <span style="font-weight: bold;">$${params[0].value.toLocaleString()}</span></div>
+          <div style="color: #3B82F6;">Jobs: <span style="font-weight: bold;">${counts[dataIndex]}</span></div>
+        `
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: months,
+      axisLine: {
+        lineStyle: {
+          color: '#374151'
+        }
+      },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 12
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: {
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 12,
+        formatter: (value) => `$${value.toLocaleString()}`
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#374151',
+          type: 'dashed'
+        }
+      }
+    },
+    series: [
+      {
+        name: 'Net Profit',
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 8,
+        sampling: 'lttb',
+        itemStyle: {
+          color: '#22C55E',
+          borderWidth: 2,
+          borderColor: '#fff'
+        },
+        lineStyle: {
+          width: 3,
+          color: '#22C55E'
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              {
+                offset: 0,
+                color: 'rgba(34, 197, 94, 0.3)'
+              },
+              {
+                offset: 1,
+                color: 'rgba(34, 197, 94, 0.05)'
+              }
+            ]
+          }
+        },
+        emphasis: {
+          focus: 'series',
+          itemStyle: {
+            color: '#22C55E',
+            borderWidth: 3,
+            borderColor: '#fff',
+            shadowBlur: 10,
+            shadowColor: 'rgba(34, 197, 94, 0.5)'
+          }
+        },
+        data: revenues,
+        animationDuration: 2000,
+        animationEasing: 'cubicOut'
+      }
+    ]
+  }
 
   return (
     <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
@@ -56,38 +155,22 @@ export default function RevenueTrendsChart({ data, loading = false }) {
           Last 12 months
         </span>
       </div>
-      
+
       {chartData.length > 0 ? (
-        <ResponsiveContainer width="100%" height={320}>
-          <AreaChart data={chartData}>
-            <defs>
-              <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#22C55E" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#22C55E" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis
-              dataKey="month"
-              stroke="#9ca3af"
-              style={{ fontSize: '12px' }}
-            />
-            <YAxis
-              stroke="#9ca3af"
-              style={{ fontSize: '12px' }}
-              tickFormatter={(value) => `$${value.toLocaleString()}`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey="revenue"
-              stroke="#22C55E"
-              strokeWidth={2}
-              fillOpacity={1}
-              fill="url(#colorRevenue)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <>
+          <ReactECharts
+            option={option}
+            style={{ height: '320px' }}
+            opts={{ renderer: 'svg' }}
+          />
+          {!hasRevenue && (
+            <div className="mt-2 text-center">
+              <p className="text-xs text-yellow-500/80">
+                ⚠️ Jobs found but no net profit recorded. Please add invoice and subcontract amounts.
+              </p>
+            </div>
+          )}
+        </>
       ) : (
         <div className="h-80 flex flex-col items-center justify-center text-gray-400">
           <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,15 +180,6 @@ export default function RevenueTrendsChart({ data, loading = false }) {
           <p className="text-xs text-gray-500 mt-1">Add invoice and subcontract amounts to your jobs to see trends</p>
         </div>
       )}
-      
-      {!hasRevenue && chartData.length > 0 && (
-        <div className="mt-2 text-center">
-          <p className="text-xs text-yellow-500/80">
-            ⚠️ Jobs found but no net profit recorded. Please add invoice and subcontract amounts.
-          </p>
-        </div>
-      )}
     </div>
   )
 }
-
