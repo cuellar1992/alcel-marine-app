@@ -57,8 +57,8 @@ export default function ShipsByPortChart({ data, loading = false }) {
               stroke="#9ca3af"
               style={{ fontSize: '12px' }}
             />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <Bar dataKey="value" radius={[8, 8, 0, 0]} activeBar={false}>
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}

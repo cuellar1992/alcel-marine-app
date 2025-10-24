@@ -109,18 +109,19 @@ export default function JobsPerMonthChart({ data, loading = false }) {
               stroke="#9ca3af"
               style={{ fontSize: '12px' }}
             />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend 
+            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <Legend
               wrapperStyle={{ fontSize: '12px' }}
               formatter={(value) => formatJobType(value)}
             />
             {jobTypesArray.map((jobType, index) => (
-              <Bar 
+              <Bar
                 key={jobType}
-                dataKey={jobType} 
+                dataKey={jobType}
                 stackId="a"
                 fill={jobTypeColors[jobType] || '#6b7280'}
                 radius={index === jobTypesArray.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
+                activeBar={false}
               />
             ))}
           </BarChart>
