@@ -1,9 +1,9 @@
 /**
  * Jobs Per Month Chart Component
- * Shows total jobs per month including both regular jobs and claims
+ * Grouped bar chart showing jobs per month by type (Apache ECharts)
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import ReactECharts from 'echarts-for-react'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -21,7 +21,7 @@ export default function JobsPerMonthChart({ data, loading = false }) {
 
   // Group by month and job type
   const monthlyData = {}
-  
+
   data.forEach(item => {
     const monthKey = item._id.month
     if (!monthlyData[monthKey]) {
@@ -31,21 +31,24 @@ export default function JobsPerMonthChart({ data, loading = false }) {
         total: 0
       }
     }
-    
+
     const jobType = item._id.jobType || 'other'
     monthlyData[monthKey][jobType] = item.count
     monthlyData[monthKey].total += item.count
   })
 
   // Convert to array and sort by month
-  const chartData = Object.values(monthlyData).sort((a, b) => a.monthNumber - b.monthNumber)
+  let chartData = Object.values(monthlyData).sort((a, b) => a.monthNumber - b.monthNumber)
+
+  // Filter out months with no data (total = 0)
+  chartData = chartData.filter(month => month.total > 0)
 
   // Get all unique job types
-  const jobTypes = new Set()
+  const jobTypesSet = new Set()
   data.forEach(item => {
-    jobTypes.add(item._id.jobType || 'other')
+    jobTypesSet.add(item._id.jobType || 'other')
   })
-  const jobTypesArray = Array.from(jobTypes)
+  const jobTypes = Array.from(jobTypesSet)
 
   // Colors for different job types (Vibrant palette)
   const jobTypeColors = {
@@ -66,26 +69,136 @@ export default function JobsPerMonthChart({ data, loading = false }) {
     return type.charAt(0).toUpperCase() + type.slice(1)
   }
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const total = payload.reduce((sum, entry) => sum + entry.value, 0)
-      return (
-        <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-lg p-3 shadow-xl">
-          <p className="text-white font-semibold mb-2">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {formatJobType(entry.name)}: <span className="font-bold">{entry.value}</span>
-            </p>
-          ))}
-          <div className="border-t border-gray-700 mt-2 pt-2">
-            <p className="text-white text-sm font-semibold">
-              Total: {total}
-            </p>
-          </div>
-        </div>
-      )
-    }
-    return null
+  const months = chartData.map(item => item.month)
+
+  // Calculate bar width based on number of months
+  const numberOfMonths = chartData.length
+  const barWidth = numberOfMonths <= 3 ? 24 : numberOfMonths <= 6 ? 20 : 18
+  const categoryGap = numberOfMonths <= 3 ? '50%' : numberOfMonths <= 6 ? '45%' : '40%'
+
+  // Prepare series data for grouped bar chart
+  const series = jobTypes.map(jobType => ({
+    name: formatJobType(jobType),
+    type: 'bar',
+    barWidth: barWidth, // Ancho dinámico según cantidad de meses
+    barGap: '20%', // Espacio entre barras del mismo grupo
+    barCategoryGap: categoryGap, // Espacio entre grupos de barras (meses)
+    itemStyle: {
+      color: jobTypeColors[jobType] || '#6b7280',
+      borderRadius: [6, 6, 0, 0]
+    },
+    emphasis: {
+      itemStyle: {
+        shadowBlur: 10,
+        shadowColor: 'rgba(0, 0, 0, 0.5)',
+        borderWidth: 2,
+        borderColor: '#fff'
+      }
+    },
+    data: chartData.map(month => month[jobType] || 0),
+    animationDuration: 1500,
+    animationEasing: 'elasticOut',
+    animationDelay: (idx) => idx * 50
+  }))
+
+  const option = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      },
+      backgroundColor: 'rgba(17, 24, 39, 0.95)',
+      borderColor: 'rgba(75, 85, 99, 0.5)',
+      borderWidth: 1,
+      textStyle: {
+        color: '#fff',
+        fontSize: 13
+      },
+      padding: 12,
+      formatter: function (params) {
+        let result = `<div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">${params[0].axisValue}</div>`
+        let total = 0
+
+        // Sort by value descending
+        const sortedParams = [...params].sort((a, b) => b.value - a.value)
+
+        sortedParams.forEach(item => {
+          if (item.value > 0) {
+            result += `
+              <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                <span style="display: inline-block; width: 12px; height: 12px; background-color: ${item.color}; border-radius: 3px; margin-right: 8px;"></span>
+                <span style="color: #9ca3af;">${item.seriesName}:</span>
+                <span style="font-weight: bold; margin-left: 8px; color: ${item.color};">${item.value}</span>
+              </div>
+            `
+            total += item.value
+          }
+        })
+
+        result += `<div style="border-top: 1px solid #374151; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between;">
+          <span style="color: #9ca3af;">Total:</span>
+          <span style="font-weight: bold; color: #fff;">${total}</span>
+        </div>`
+
+        return result
+      }
+    },
+    legend: {
+      data: jobTypes.map(formatJobType),
+      textStyle: {
+        color: '#9ca3af',
+        fontSize: 12
+      },
+      bottom: '2%',
+      itemGap: 20,
+      itemWidth: 16,
+      itemHeight: 12,
+      icon: 'roundRect'
+    },
+    grid: {
+      left: '5%',
+      right: '5%',
+      bottom: '12%',
+      top: '8%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: months,
+      axisLine: {
+        lineStyle: {
+          color: '#374151'
+        }
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 12
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: {
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 12
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#374151',
+          type: 'dashed'
+        }
+      }
+    },
+    series: series
   }
 
   return (
@@ -97,35 +210,11 @@ export default function JobsPerMonthChart({ data, loading = false }) {
         </span>
       </div>
       {chartData.length > 0 ? (
-        <ResponsiveContainer width="100%" height={320}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis 
-              dataKey="month" 
-              stroke="#9ca3af"
-              style={{ fontSize: '12px' }}
-            />
-            <YAxis 
-              stroke="#9ca3af"
-              style={{ fontSize: '12px' }}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={false} />
-            <Legend
-              wrapperStyle={{ fontSize: '12px' }}
-              formatter={(value) => formatJobType(value)}
-            />
-            {jobTypesArray.map((jobType, index) => (
-              <Bar
-                key={jobType}
-                dataKey={jobType}
-                stackId="a"
-                fill={jobTypeColors[jobType] || '#6b7280'}
-                radius={index === jobTypesArray.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
-                activeBar={false}
-              />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
+        <ReactECharts
+          option={option}
+          style={{ height: '320px' }}
+          opts={{ renderer: 'svg' }}
+        />
       ) : (
         <div className="h-80 flex items-center justify-center text-gray-400">
           <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,4 +226,3 @@ export default function JobsPerMonthChart({ data, loading = false }) {
     </div>
   )
 }
-
