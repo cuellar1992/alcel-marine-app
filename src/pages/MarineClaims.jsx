@@ -6,14 +6,15 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Container, Card, Input, Select, Button, Modal, DatePicker, DateTimePicker, Table, ConfirmDialog, Pagination, SearchBar, TimeSheet } from '../components/ui'
-import { claimsAPI } from '../services'
-import { useConfirm } from '../hooks'
+import { claimsAPI, clientsAPI } from '../services'
+import { useConfirm, useCacheInvalidation } from '../hooks'
 import { exportClaimsToExcel } from '../utils'
-import { Pencil, Trash2, RotateCw, Clock, Edit3, Trash, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Pencil, Trash2, RotateCw, Clock, Edit3, Trash, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Settings } from 'lucide-react'
 import TimeSheetFullScreenModal from '../components/TimeSheetFullScreenModal'
 
 export default function MarineClaims() {
   const confirmDialog = useConfirm()
+  const { invalidateCache } = useCacheInvalidation()
   
   const [formData, setFormData] = useState({
     jobNumber: '',
@@ -63,10 +64,18 @@ export default function MarineClaims() {
   const [advancedFilters, setAdvancedFilters] = useState({})
   const [hasActiveFilters, setHasActiveFilters] = useState(false)
 
+  // Clients Management
+  const [clients, setClients] = useState([])
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false)
+  const [newClient, setNewClient] = useState('')
+  const [editingClientIndex, setEditingClientIndex] = useState(null)
+  const [editingClientId, setEditingClientId] = useState(null)
+
   const [loading, setLoading] = useState(false)
 
-  // Load claims on mount
+  // Load claims and clients on mount
   useEffect(() => {
+    loadClients()
     loadClaims()
   }, [])
 
@@ -151,20 +160,118 @@ export default function MarineClaims() {
 
     try {
       const loadingToast = toast.loading('Generating Excel file...')
-      
+
       await exportClaimsToExcel(claims, 'Alcel_Marine_Claims')
-      
+
       toast.dismiss(loadingToast)
-      
-      const filterMessage = hasActiveFilters || searchTerm 
+
+      const filterMessage = hasActiveFilters || searchTerm
         ? ' (filtered results)'
         : ''
-      
+
       toast.success(`Successfully exported ${claims.length} claim${claims.length === 1 ? '' : 's'} to Excel!${filterMessage}`)
     } catch (error) {
       toast.error('Failed to export to Excel')
       console.error('Export error:', error)
     }
+  }
+
+  // Load clients from API
+  const loadClients = async () => {
+    try {
+      const response = await clientsAPI.getAll()
+      if (response.success) {
+        setClients(response.data)
+      }
+    } catch (error) {
+      console.error('Error loading clients:', error)
+      setClients([])
+    }
+  }
+
+  // Client modal handlers
+  const openClientModal = () => {
+    setIsClientModalOpen(true)
+    setNewClient('')
+    setEditingClientIndex(null)
+    setEditingClientId(null)
+  }
+
+  const closeClientModal = () => {
+    setIsClientModalOpen(false)
+    setNewClient('')
+    setEditingClientIndex(null)
+    setEditingClientId(null)
+  }
+
+  // Client Management Functions
+  const handleAddClient = async () => {
+    if (newClient.trim()) {
+      setLoading(true)
+      try {
+        const response = await clientsAPI.create({ name: newClient.trim() })
+
+        if (response.success) {
+          await loadClients()
+          setNewClient('')
+          toast.success('Client added successfully!')
+        }
+      } catch (error) {
+        toast.error(error.message || 'Failed to add client')
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  const handleEditClient = (index, id) => {
+    setEditingClientIndex(index)
+    setEditingClientId(id)
+    setNewClient(clients[index].name)
+  }
+
+  const handleUpdateClient = async () => {
+    if (editingClientId && newClient.trim()) {
+      setLoading(true)
+      try {
+        const response = await clientsAPI.update(editingClientId, { name: newClient.trim() })
+
+        if (response.success) {
+          await loadClients()
+          setNewClient('')
+          setEditingClientIndex(null)
+          setEditingClientId(null)
+          toast.success('Client updated successfully!')
+        }
+      } catch (error) {
+        toast.error(error.message || 'Failed to update client')
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  const handleDeleteClient = (id) => {
+    confirmDialog.confirm({
+      title: 'Delete Client',
+      message: 'Are you sure you want to delete this client? This action cannot be undone.',
+      type: 'danger',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          const response = await clientsAPI.delete(id)
+
+          if (response.success) {
+            await loadClients()
+            toast.success('Client deleted successfully!')
+          }
+        } catch (error) {
+          toast.error(error.message || 'Failed to delete client')
+        } finally {
+          setLoading(false)
+        }
+      }
+    })
   }
 
   const handleChange = async (e) => {
@@ -206,14 +313,16 @@ export default function MarineClaims() {
         if (response.success) {
           toast.success('Claim updated successfully!')
           setEditingClaim(null)
+          invalidateCache() // Invalidate dashboard cache after update
         }
       } else {
         const response = await claimsAPI.create(formData)
         if (response.success) {
           toast.success('Claim created successfully!')
+          invalidateCache() // Invalidate dashboard cache after create
         }
       }
-      
+
       // Clear form and reload claims
       setFormData({
         jobNumber: '',
@@ -290,6 +399,7 @@ export default function MarineClaims() {
           const response = await claimsAPI.delete(id)
           if (response.success) {
             toast.success('Claim deleted successfully!')
+            invalidateCache() // Invalidate dashboard cache after delete
             await loadClaims()
           }
         } catch (error) {
@@ -396,14 +506,44 @@ export default function MarineClaims() {
             </div>
 
             {/* Client Name */}
-            <Input
-              label="Client Name"
-              name="clientName"
-              value={formData.clientName}
-              onChange={handleChange}
-              placeholder="Enter client name"
-              required
-            />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-300">
+                  Client Name
+                  <span className="text-cyan-400 ml-1">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={openClientModal}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors duration-200 flex items-center gap-1"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  Manage Clients
+                </button>
+              </div>
+              <select
+                name="clientName"
+                value={formData.clientName}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-white
+                  focus:outline-none focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20
+                  transition-all duration-300 backdrop-blur-xl hover:border-white/20 cursor-pointer"
+              >
+                <option value="" disabled className="bg-slate-800">
+                  Select client
+                </option>
+                {clients.map((client) => (
+                  <option
+                    key={client._id}
+                    value={client.name}
+                    className="bg-slate-800"
+                  >
+                    {client.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Registration Date - with Today button */}
             <DatePicker
@@ -1000,6 +1140,125 @@ export default function MarineClaims() {
         claimId={timeSheetClaimId}
         claimInfo={timeSheetClaimInfo}
       />
+
+      {/* Clients Management Modal */}
+      <Modal
+        isOpen={isClientModalOpen}
+        onClose={closeClientModal}
+        title="Manage Clients"
+        size="default"
+      >
+        <div className="space-y-8">
+          {/* Add/Edit Form */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+              <p className="text-xs uppercase tracking-widest text-cyan-400/60 font-light">
+                {editingClientIndex !== null ? 'Edit Client' : 'New Client'}
+              </p>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+            </div>
+
+            <Input
+              label="Client Name"
+              value={newClient}
+              onChange={(e) => setNewClient(e.target.value)}
+              placeholder="e.g., Marine Corp"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  if (editingClientIndex !== null) {
+                    handleUpdateClient()
+                  } else {
+                    handleAddClient()
+                  }
+                }
+              }}
+            />
+
+            <div className="flex gap-3 pt-2">
+              {editingClientIndex !== null ? (
+                <>
+                  <Button
+                    onClick={handleUpdateClient}
+                    variant="primary"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    Update
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setNewClient('')
+                      setEditingClientIndex(null)
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleAddClient}
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Add Client
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Current Clients List */}
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent"></div>
+              <p className="text-xs uppercase tracking-widest text-blue-400/60 font-light">
+                Current Clients
+              </p>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent"></div>
+            </div>
+
+            <div className="space-y-2">
+              {clients.map((client, index) => (
+                <div
+                  key={index}
+                  className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-r from-slate-800/30 to-slate-900/30 hover:from-slate-800/50 hover:to-slate-900/50 hover:border-cyan-500/30 transition-all duration-300"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-cyan-600/0 to-blue-600/0 group-hover:from-blue-600/5 group-hover:via-cyan-600/5 group-hover:to-blue-600/5 transition-all duration-500"></div>
+
+                  <div className="relative p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium tracking-wide">{client.name}</p>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditClient(index, client._id)}
+                        className="group/btn relative p-2 text-cyan-400 hover:text-cyan-300 transition-all duration-300 overflow-hidden rounded-lg hover:bg-cyan-500/10"
+                        disabled={loading}
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4 group-hover/btn:scale-110 transition-transform duration-300" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClient(client._id)}
+                        className="group/btn relative p-2 text-gray-400 hover:text-red-400 transition-all duration-300 overflow-hidden rounded-lg hover:bg-red-500/10"
+                        disabled={loading}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform duration-300" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Modal>
     </Container>
   )
 }

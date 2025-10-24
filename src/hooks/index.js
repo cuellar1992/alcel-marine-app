@@ -5,4 +5,5 @@
 
 export { useLocalStorage } from './useLocalStorage'
 export { useConfirm } from './useConfirm'
+export { useCacheInvalidation } from './useCacheInvalidation'
 
