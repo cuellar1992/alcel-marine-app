@@ -21,6 +21,7 @@ import timeSheetRoutes from './routes/timeSheetRoutes.js'
 import dashboardRoutes from './routes/dashboardRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import userManagementRoutes from './routes/userManagementRoutes.js'
+import twoFactorRoutes from './routes/twoFactorRoutes.js'
 
 // Import middleware
 import { apiLimiter } from './middleware/rateLimiter.js'
@@ -43,6 +44,9 @@ connectDB()
 // Routes
 // Auth routes (public - no authentication required)
 app.use('/api/auth', authRoutes)
+
+// 2FA routes (protected - user must be authenticated)
+app.use('/api/2fa', twoFactorRoutes)
 
 // User management routes (admin only - protected)
 app.use('/api/users', userManagementRoutes)

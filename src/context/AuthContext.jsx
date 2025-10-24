@@ -40,21 +40,30 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  // Login
-  const login = async (email, password) => {
+  // Login (con soporte para 2FA)
+  const login = async (email, password, twoFactorCode = null, isBackupCode = false) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, twoFactorCode, isBackupCode }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');
+      }
+
+      // Si requiere 2FA, retornar sin guardar tokens
+      if (data.requiresTwoFactor) {
+        return {
+          success: true,
+          requiresTwoFactor: true,
+          userId: data.data?.userId
+        };
       }
 
       // Guardar tokens y usuario
@@ -65,7 +74,7 @@ export const AuthProvider = ({ children }) => {
       setUser(data.data.user);
       toast.success('Login successful!');
 
-      return { success: true };
+      return { success: true, requiresTwoFactor: false };
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error.message || 'Login failed');

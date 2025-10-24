@@ -50,6 +50,19 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date
   },
+  // 2FA fields
+  twoFactorSecret: {
+    type: String,
+    select: false // No incluir en queries por defecto
+  },
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorBackupCodes: {
+    type: [String],
+    select: false // No incluir en queries por defecto
+  },
   createdAt: {
     type: Date,
     default: Date.now

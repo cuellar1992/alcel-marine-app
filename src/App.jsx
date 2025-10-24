@@ -9,6 +9,7 @@ import { Layout } from './components/layout'
 import { Home, MarineNonClaims, MarineClaims } from './pages'
 import Login from './pages/Login'
 import UserManagement from './pages/UserManagement'
+import Settings from './pages/Settings'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -57,6 +58,16 @@ function App() {
               <ProtectedRoute requiredRole="admin">
                 <Layout>
                   <UserManagement />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Settings />
                 </Layout>
               </ProtectedRoute>
             }
