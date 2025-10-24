@@ -492,7 +492,7 @@ export const getVesselSchedule = async (req, res) => {
       ]
     })
       .sort({ etb: 1 })
-      .select('jobNumber vesselName port etb etd status')
+      .select('jobNumber vesselName port etb etd status jobType clientName')
       .lean()
 
     res.json({

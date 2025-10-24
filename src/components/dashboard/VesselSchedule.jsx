@@ -3,7 +3,7 @@
  * Shows upcoming vessel arrivals and departures (ETB/ETD)
  */
 
-import { Ship, Calendar, MapPin, ArrowRight, Clock } from 'lucide-react'
+import { Ship, Calendar, MapPin, ArrowRight, Clock, Briefcase, User } from 'lucide-react'
 
 export default function VesselSchedule({ data, loading = false }) {
   if (loading) {
@@ -83,11 +83,8 @@ export default function VesselSchedule({ data, loading = false }) {
                     <Ship className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold truncate">
+                    <p className="text-white font-semibold text-lg truncate">
                       {vessel.vesselName}
-                    </p>
-                    <p className="text-sm text-gray-400 truncate">
-                      {vessel.jobNumber}
                     </p>
                   </div>
                 </div>
@@ -98,10 +95,26 @@ export default function VesselSchedule({ data, loading = false }) {
                 )}
               </div>
 
+              {/* Job Type and Client Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 pl-13">
+                {vessel.jobType && (
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Briefcase className="w-4 h-4 text-cyan-400" />
+                    <span className="capitalize">{vessel.jobType}</span>
+                  </div>
+                )}
+                {vessel.clientName && (
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <User className="w-4 h-4 text-purple-400" />
+                    <span className="truncate">{vessel.clientName}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Port */}
               {vessel.port && (
                 <div className="flex items-center gap-2 text-sm text-gray-400 mb-3 pl-13">
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-4 h-4 text-orange-400" />
                   <span>{vessel.port}</span>
                 </div>
               )}
