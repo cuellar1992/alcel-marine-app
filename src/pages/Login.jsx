@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import PasswordStrengthBar from 'react-password-strength-bar';
+import PasswordRequirements from '../components/PasswordRequirements';
 import './Login.css';
 
 const Login = () => {
@@ -11,6 +13,7 @@ const Login = () => {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const { login, register } = useAuth();
   const navigate = useNavigate();
@@ -20,10 +23,44 @@ const Login = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    
+    // Limpiar error de contraseña cuando el usuario escribe
+    if (e.target.name === 'password') {
+      setPasswordError('');
+    }
+  };
+
+  const validatePassword = (password) => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number';
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return 'Password must contain at least one special character';
+    }
+    return '';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar contraseña en modo registro
+    if (!isLogin) {
+      const error = validatePassword(formData.password);
+      if (error) {
+        setPasswordError(error);
+        return;
+      }
+    }
+    
     setLoading(true);
 
     try {
@@ -47,6 +84,7 @@ const Login = () => {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setFormData({ name: '', email: '', password: '' });
+    setPasswordError('');
   };
 
   return (
@@ -98,10 +136,28 @@ const Login = () => {
               onChange={handleChange}
               required
               placeholder="Enter your password"
-              minLength={6}
+              minLength={!isLogin ? 8 : 6}
               disabled={loading}
+              className={passwordError ? 'input-error' : ''}
             />
+            {passwordError && (
+              <span className="error-message">{passwordError}</span>
+            )}
+            {!isLogin && formData.password && (
+              <div className="password-strength-container">
+                <PasswordStrengthBar
+                  password={formData.password}
+                  minLength={8}
+                  scoreWords={['very weak', 'weak', 'fair', 'good', 'strong']}
+                  shortScoreWord="too short"
+                />
+              </div>
+            )}
           </div>
+
+          {!isLogin && (
+            <PasswordRequirements password={formData.password} />
+          )}
 
           <button type="submit" className="login-button" disabled={loading}>
             {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}

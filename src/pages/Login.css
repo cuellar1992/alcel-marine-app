@@ -126,6 +126,35 @@
   cursor: not-allowed;
 }
 
+/* Password strength bar container */
+.password-strength-container {
+  margin-top: 8px;
+}
+
+/* Personalización de react-password-strength-bar */
+.password-strength-container div[style] {
+  margin: 0 !important;
+}
+
+/* Error message */
+.error-message {
+  display: block;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* Input error state */
+.form-group input.input-error {
+  border-color: #dc2626;
+}
+
+.form-group input.input-error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
 @media (max-width: 480px) {
   .login-card {
     padding: 30px 20px;

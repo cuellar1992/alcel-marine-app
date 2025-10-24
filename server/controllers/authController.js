@@ -14,6 +14,26 @@ export const register = async (req, res) => {
       });
     }
 
+    // Validar fortaleza de contraseña
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long.'
+      });
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+      });
+    }
+
     // Verificar si el usuario ya existe
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -270,6 +290,26 @@ export const changePassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide current password and new password.'
+      });
+    }
+
+    // Validar fortaleza de la nueva contraseña
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters long.'
+      });
+    }
+
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
       });
     }
 
