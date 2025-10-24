@@ -19,6 +19,7 @@ const Login = () => {
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [savedCredentials, setSavedCredentials] = useState(null);
+  const [trustDevice, setTrustDevice] = useState(false);
 
   const { login, register } = useAuth();
   const navigate = useNavigate();
@@ -108,7 +109,8 @@ const Login = () => {
         savedCredentials.email,
         savedCredentials.password,
         twoFactorCode,
-        useBackupCode
+        useBackupCode,
+        trustDevice
       );
 
       if (result.success) {
@@ -125,6 +127,7 @@ const Login = () => {
     setRequires2FA(false);
     setTwoFactorCode('');
     setUseBackupCode(false);
+    setTrustDevice(false);
     setSavedCredentials(null);
     setFormData({ name: '', email: '', password: '' });
   };
@@ -139,6 +142,11 @@ const Login = () => {
   if (requires2FA) {
     return (
       <div className="login-container">
+        {/* Logo */}
+        <div className="login-logo">
+          <img src="/logo.png" alt="Alcel Marine" />
+        </div>
+
         <div className="login-card">
           <div className="login-header">
             <div className="flex items-center justify-center mb-2">
@@ -184,6 +192,21 @@ const Login = () => {
               {useBackupCode ? 'Use authenticator code instead' : 'Use backup code instead'}
             </button>
 
+            {/* Trust Device Checkbox */}
+            <div className="flex items-center gap-2 mb-4 p-3 bg-slate-900/30 rounded-lg border border-white/5">
+              <input
+                type="checkbox"
+                id="trustDevice"
+                checked={trustDevice}
+                onChange={(e) => setTrustDevice(e.target.checked)}
+                disabled={loading}
+                className="w-4 h-4 text-cyan-600 bg-slate-800 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2 cursor-pointer"
+              />
+              <label htmlFor="trustDevice" className="text-sm text-gray-300 cursor-pointer select-none">
+                Remember this browser for 45 days
+              </label>
+            </div>
+
             <button
               type="submit"
               className="login-button"
@@ -210,6 +233,11 @@ const Login = () => {
   // Vista normal de login
   return (
     <div className="login-container">
+      {/* Logo */}
+      <div className="login-logo">
+        <img src="/logo.png" alt="Alcel Marine" />
+      </div>
+
       <div className="login-card">
         <div className="login-header">
           <h1>Alcel Marine</h1>

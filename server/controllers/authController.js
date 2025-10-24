@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/tokenUtils.js';
+import crypto from 'crypto';
 
 // Registro de nuevo usuario
 export const register = async (req, res) => {
@@ -84,7 +85,7 @@ export const register = async (req, res) => {
 // Login de usuario
 export const login = async (req, res) => {
   try {
-    const { email, password, twoFactorCode, isBackupCode } = req.body;
+    const { email, password, twoFactorCode, isBackupCode, deviceId, trustDevice } = req.body;
 
     // Validar campos requeridos
     if (!email || !password) {
@@ -122,8 +123,13 @@ export const login = async (req, res) => {
 
     // Si el usuario tiene 2FA habilitado
     if (user.twoFactorEnabled) {
-      // Si no se proporciona código 2FA, indicar que se requiere
-      if (!twoFactorCode) {
+      // Verificar si el dispositivo es confiable
+      const isTrustedDevice = deviceId && user.trustedDevices && user.trustedDevices.some(device => {
+        return device.deviceId === deviceId && new Date(device.expiresAt) > new Date();
+      });
+
+      // Si no es dispositivo confiable y no se proporciona código 2FA
+      if (!isTrustedDevice && !twoFactorCode) {
         return res.status(200).json({
           success: true,
           requiresTwoFactor: true,
@@ -134,15 +140,56 @@ export const login = async (req, res) => {
         });
       }
 
-      // Verificar código 2FA
-      const { verifyTwoFactorCode } = await import('./twoFactorController.js');
-      const isCodeValid = await verifyTwoFactorCode(user._id, twoFactorCode, isBackupCode);
+      // Si no es dispositivo confiable, verificar código 2FA
+      if (!isTrustedDevice) {
+        const { verifyTwoFactorCode } = await import('./twoFactorController.js');
+        const isCodeValid = await verifyTwoFactorCode(user._id, twoFactorCode, isBackupCode);
 
-      if (!isCodeValid) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid 2FA code.'
-        });
+        if (!isCodeValid) {
+          return res.status(401).json({
+            success: false,
+            message: 'Invalid 2FA code.'
+          });
+        }
+
+        // Si el usuario quiere confiar en este dispositivo
+        if (trustDevice && deviceId) {
+          const userAgent = req.headers['user-agent'] || 'Unknown';
+          const deviceName = getDeviceName(userAgent);
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 45); // 45 días
+
+          // Eliminar dispositivos expirados
+          user.trustedDevices = user.trustedDevices.filter(device =>
+            new Date(device.expiresAt) > new Date()
+          );
+
+          // Verificar si el dispositivo ya existe
+          const existingDeviceIndex = user.trustedDevices.findIndex(
+            device => device.deviceId === deviceId
+          );
+
+          if (existingDeviceIndex !== -1) {
+            // Actualizar dispositivo existente
+            user.trustedDevices[existingDeviceIndex].lastUsed = new Date();
+            user.trustedDevices[existingDeviceIndex].expiresAt = expiresAt;
+          } else {
+            // Agregar nuevo dispositivo confiable
+            user.trustedDevices.push({
+              deviceId,
+              deviceName,
+              userAgent,
+              lastUsed: new Date(),
+              expiresAt
+            });
+          }
+        }
+      } else {
+        // Actualizar última vez usado del dispositivo confiable
+        const deviceIndex = user.trustedDevices.findIndex(device => device.deviceId === deviceId);
+        if (deviceIndex !== -1) {
+          user.trustedDevices[deviceIndex].lastUsed = new Date();
+        }
       }
     }
 
@@ -178,6 +225,16 @@ export const login = async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
+};
+
+// Helper para obtener nombre del dispositivo desde user agent
+const getDeviceName = (userAgent) => {
+  if (userAgent.includes('Chrome')) return 'Chrome Browser';
+  if (userAgent.includes('Firefox')) return 'Firefox Browser';
+  if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari Browser';
+  if (userAgent.includes('Edge')) return 'Edge Browser';
+  if (userAgent.includes('Opera')) return 'Opera Browser';
+  return 'Unknown Browser';
 };
 
 // Refresh token

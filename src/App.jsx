@@ -11,12 +11,14 @@ import Login from './pages/Login'
 import UserManagement from './pages/UserManagement'
 import Settings from './pages/Settings'
 import { AuthProvider } from './context/AuthContext'
+import { DashboardCacheProvider } from './context/DashboardCacheContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
     <Router>
       <AuthProvider>
+        <DashboardCacheProvider>
         <Routes>
           {/* Public route */}
           <Route path="/login" element={<Login />} />
@@ -121,6 +123,7 @@ function App() {
           },
         }}
       />
+        </DashboardCacheProvider>
       </AuthProvider>
     </Router>
   )

@@ -63,6 +63,17 @@ const userSchema = new mongoose.Schema({
     type: [String],
     select: false // No incluir en queries por defecto
   },
+  trustedDevices: [{
+    deviceId: String,
+    deviceName: String,
+    userAgent: String,
+    lastUsed: Date,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    expiresAt: Date
+  }],
   createdAt: {
     type: Date,
     default: Date.now
