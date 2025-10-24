@@ -42,6 +42,10 @@ const refreshAccessToken = async () => {
   return data.data.accessToken
 }
 
+// Variable para evitar múltiples intentos simultáneos de refresh
+let isRefreshing = false;
+let refreshPromise = null;
+
 // Generic API call function with auth
 const apiCall = async (endpoint, options = {}) => {
   try {
@@ -67,7 +71,20 @@ const apiCall = async (endpoint, options = {}) => {
 
       if (shouldRefresh && localStorage.getItem('refreshToken')) {
         try {
-          const newToken = await refreshAccessToken()
+          // Si ya hay un refresh en progreso, esperar a que termine
+          if (isRefreshing) {
+            await refreshPromise;
+          } else {
+            // Iniciar nuevo refresh
+            isRefreshing = true;
+            refreshPromise = refreshAccessToken().finally(() => {
+              isRefreshing = false;
+              refreshPromise = null;
+            });
+            await refreshPromise;
+          }
+
+          const newToken = getAuthToken();
 
           // Reintentar la petición con el nuevo token
           const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -88,6 +105,7 @@ const apiCall = async (endpoint, options = {}) => {
           return retryData
         } catch (refreshError) {
           // Si el refresh falla, el usuario será redirigido a login
+          console.error('Error refreshing token:', refreshError);
           throw refreshError
         }
       } else {
@@ -97,6 +115,9 @@ const apiCall = async (endpoint, options = {}) => {
           localStorage.removeItem('accessToken')
           localStorage.removeItem('refreshToken')
           localStorage.removeItem('user')
+          
+          // Mostrar mensaje antes de redirigir
+          console.log('⚠️ Sesión expirada, redirigiendo a login...');
           window.location.href = '/login'
         }
         throw new Error(data.message || 'Unauthorized')

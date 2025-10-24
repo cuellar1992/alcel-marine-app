@@ -2,6 +2,11 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getDeviceFingerprint } from '../utils/deviceFingerprint';
+import { 
+  validateStoredTokens, 
+  clearAuthData, 
+  isTokenExpired 
+} from '../utils/tokenUtils';
 
 const AuthContext = createContext(null);
 
@@ -18,21 +23,54 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Cargar usuario desde localStorage al montar
+  // Cargar usuario desde localStorage al montar y verificar tokens
   useEffect(() => {
-    const loadUser = () => {
+    const loadUser = async () => {
       try {
         const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('accessToken');
+        const tokenStatus = validateStoredTokens();
 
-        if (storedUser && token) {
-          setUser(JSON.parse(storedUser));
+        // Si no hay tokens, limpiar y terminar
+        if (!tokenStatus.hasTokens) {
+          clearAuthData();
+          setLoading(false);
+          return;
+        }
+
+        // Si el access token es válido, cargar usuario
+        if (tokenStatus.accessTokenValid) {
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+          setLoading(false);
+          return;
+        }
+
+        // Si el access token expiró pero el refresh token es válido, intentar refrescar
+        if (!tokenStatus.accessTokenValid && tokenStatus.refreshTokenValid) {
+          console.log('🔄 Access token expirado, intentando refrescar...');
+          
+          try {
+            const newAccessToken = await refreshTokenSilent();
+            
+            if (newAccessToken && storedUser) {
+              setUser(JSON.parse(storedUser));
+              toast.success('Sesión renovada automáticamente', { duration: 2000 });
+            } else {
+              clearAuthData();
+            }
+          } catch (error) {
+            console.error('Error al refrescar token:', error);
+            clearAuthData();
+          }
+        } else {
+          // Ambos tokens expirados, limpiar todo
+          console.log('❌ Tokens expirados, limpiando sesión...');
+          clearAuthData();
         }
       } catch (error) {
         console.error('Error loading user:', error);
-        localStorage.removeItem('user');
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        clearAuthData();
       } finally {
         setLoading(false);
       }
@@ -151,8 +189,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Refresh token
-  const refreshToken = async () => {
+  // Refresh token silencioso (sin notificaciones ni logout automático)
+  const refreshTokenSilent = async () => {
     try {
       const refreshTokenValue = localStorage.getItem('refreshToken');
 
@@ -180,6 +218,16 @@ export const AuthProvider = ({ children }) => {
       return data.data.accessToken;
     } catch (error) {
       console.error('Token refresh error:', error);
+      throw error; // Lanzar error para que lo maneje el llamador
+    }
+  };
+
+  // Refresh token (con notificaciones y manejo de errores)
+  const refreshToken = async () => {
+    try {
+      const newToken = await refreshTokenSilent();
+      return newToken;
+    } catch (error) {
       // Si falla el refresh, hacer logout
       logout();
       return null;
