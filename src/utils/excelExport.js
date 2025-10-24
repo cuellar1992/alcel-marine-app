@@ -13,6 +13,24 @@ import { saveAs } from 'file-saver'
  */
 export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') => {
   try {
+    // Sort jobs by Job Number in ascending order (001, 002, 003... 100)
+    const sortedJobs = [...jobs].sort((a, b) => {
+      // Extract numeric part from job numbers (e.g., "002" from "ALCEL-25-002")
+      const getNumericPart = (jobNumber) => {
+        if (!jobNumber) return 0
+        // Extract the LAST number sequence (handles formats like ALCEL-25-002)
+        const matches = jobNumber.match(/\d+/g)
+        if (!matches || matches.length === 0) return 0
+        // Return the last number found (the sequential number)
+        return parseInt(matches[matches.length - 1], 10)
+      }
+      
+      const numA = getNumericPart(a.jobNumber)
+      const numB = getNumericPart(b.jobNumber)
+      
+      return numA - numB
+    })
+    
     // Create a new workbook
     const workbook = new ExcelJS.Workbook()
     
@@ -38,7 +56,7 @@ export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') =>
     })
 
     // Check if any job has financial data (issued or paid)
-    const hasFinancialData = jobs.some(job => 
+    const hasFinancialData = sortedJobs.some(job => 
       job.invoiceIssue === 'issued' || job.invoiceIssue === 'paid'
     )
 
@@ -93,8 +111,8 @@ export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') =>
       // No borders for elegant design
     })
 
-    // Add data rows
-    jobs.forEach((job, index) => {
+    // Add data rows (sorted by job number)
+    sortedJobs.forEach((job, index) => {
       const dateTime = new Date(job.dateTime)
       const etb = job.etb ? new Date(job.etb) : null
       const etd = job.etd ? new Date(job.etd) : null
@@ -234,7 +252,7 @@ export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') =>
     // Add summary row at the bottom
     const summaryData = {
       jobNumber: '',
-      vesselName: `Total Jobs: ${jobs.length}`,
+      vesselName: `Total Jobs: ${sortedJobs.length}`,
       dateTime: '',
       etb: '',
       etd: '',
@@ -247,15 +265,15 @@ export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') =>
 
     // Calculate financial totals if applicable
     if (hasFinancialData) {
-      const totalInvoice = jobs
+      const totalInvoice = sortedJobs
         .filter(j => j.invoiceIssue === 'issued' || j.invoiceIssue === 'paid')
         .reduce((sum, job) => sum + (job.invoiceAmount || 0), 0)
       
-      const totalSubcontract = jobs
+      const totalSubcontract = sortedJobs
         .filter(j => j.invoiceIssue === 'issued' || j.invoiceIssue === 'paid')
         .reduce((sum, job) => sum + (job.subcontractAmount || 0), 0)
       
-      const totalProfit = jobs
+      const totalProfit = sortedJobs
         .filter(j => j.invoiceIssue === 'issued' || j.invoiceIssue === 'paid')
         .reduce((sum, job) => sum + (job.netProfit || 0), 0)
 
@@ -358,6 +376,24 @@ const formatInvoiceStatus = (status) => {
  */
 export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claims') => {
   try {
+    // Sort claims by Job Number in ascending order (001, 002, 003... 100)
+    const sortedClaims = [...claims].sort((a, b) => {
+      // Extract numeric part from job numbers (e.g., "002" from "ALCEL-25-002")
+      const getNumericPart = (jobNumber) => {
+        if (!jobNumber) return 0
+        // Extract the LAST number sequence (handles formats like ALCEL-25-002)
+        const matches = jobNumber.match(/\d+/g)
+        if (!matches || matches.length === 0) return 0
+        // Return the last number found (the sequential number)
+        return parseInt(matches[matches.length - 1], 10)
+      }
+      
+      const numA = getNumericPart(a.jobNumber)
+      const numB = getNumericPart(b.jobNumber)
+      
+      return numA - numB
+    })
+    
     // Create a new workbook
     const workbook = new ExcelJS.Workbook()
     
@@ -383,7 +419,7 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
     })
 
     // Check if any claim has financial data (issued or paid)
-    const hasFinancialData = claims.some(claim => 
+    const hasFinancialData = sortedClaims.some(claim => 
       claim.invoiceIssue === 'issued' || claim.invoiceIssue === 'paid'
     )
 
@@ -431,8 +467,8 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
       }
     })
 
-    // Add data rows
-    claims.forEach((claim, index) => {
+    // Add data rows (sorted by job number)
+    sortedClaims.forEach((claim, index) => {
       const registrationDate = new Date(claim.registrationDate)
       const siteInspection = claim.siteInspectionDateTime ? new Date(claim.siteInspectionDateTime) : null
       
@@ -531,7 +567,7 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
     // Add summary row at the bottom
     const summaryData = {
       jobNumber: '',
-      claimName: `Total Claims: ${claims.length}`,
+      claimName: `Total Claims: ${sortedClaims.length}`,
       registrationDate: '',
       clientRef: '',
       location: '',
@@ -541,15 +577,15 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
 
     // Calculate financial totals if applicable
     if (hasFinancialData) {
-      const totalInvoice = claims
+      const totalInvoice = sortedClaims
         .filter(c => c.invoiceIssue === 'issued' || c.invoiceIssue === 'paid')
         .reduce((sum, claim) => sum + (claim.invoiceAmount || 0), 0)
       
-      const totalSubcontract = claims
+      const totalSubcontract = sortedClaims
         .filter(c => c.invoiceIssue === 'issued' || c.invoiceIssue === 'paid')
         .reduce((sum, claim) => sum + (claim.subcontractAmount || 0), 0)
       
-      const totalProfit = claims
+      const totalProfit = sortedClaims
         .filter(c => c.invoiceIssue === 'issued' || c.invoiceIssue === 'paid')
         .reduce((sum, claim) => sum + (claim.netProfit || 0), 0)
 
