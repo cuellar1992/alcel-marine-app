@@ -164,6 +164,7 @@ const Login = () => {
           </button>
         </form>
 
+        {/* REGISTRO DESHABILITADO: Solo admins pueden crear usuarios desde User Management
         <div className="login-footer">
           <p>
             {isLogin ? "Don't have an account? " : 'Already have an account? '}
@@ -172,6 +173,7 @@ const Login = () => {
             </button>
           </p>
         </div>
+        */}
       </div>
     </div>
   );
