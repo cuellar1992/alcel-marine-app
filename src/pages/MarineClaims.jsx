@@ -40,6 +40,7 @@ export default function MarineClaims() {
   const [isTimeSheetModalOpen, setIsTimeSheetModalOpen] = useState(false)
   const [timeSheetClaimId, setTimeSheetClaimId] = useState(null)
   const [timeSheetClaimInfo, setTimeSheetClaimInfo] = useState(null)
+  const [timeSheetRefreshKey, setTimeSheetRefreshKey] = useState(0)
 
   // Sorting
   const [sortOrder, setSortOrder] = useState(null) // null, 'asc', 'desc'
@@ -809,6 +810,7 @@ export default function MarineClaims() {
             {/* Time Sheet Section */}
             <div className="border-t border-white/10 pt-6 mt-6">
               <TimeSheet
+                key={`timesheet-${viewingClaim._id}-${timeSheetRefreshKey}`}
                 claimId={viewingClaim._id}
                 isVisible={true}
                 onHeaderClick={() => {
@@ -992,6 +994,8 @@ export default function MarineClaims() {
           setIsTimeSheetModalOpen(false)
           setTimeSheetClaimId(null)
           setTimeSheetClaimInfo(null)
+          // Increment refresh key to force TimeSheet reload in view modal
+          setTimeSheetRefreshKey(prev => prev + 1)
         }}
         claimId={timeSheetClaimId}
         claimInfo={timeSheetClaimInfo}

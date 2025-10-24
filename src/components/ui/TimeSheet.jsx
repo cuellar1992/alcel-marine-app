@@ -20,6 +20,8 @@ const TimeSheet = ({
   const [loading, setLoading] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(!forceExpanded)
   const [editingId, setEditingId] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [entryToDelete, setEntryToDelete] = useState(null)
   
   // Form data for new entry
   const [formData, setFormData] = useState({
@@ -122,23 +124,35 @@ const TimeSheet = ({
     }
   }
 
-  // Delete timesheet entry
-  const handleDeleteEntry = async (id) => {
-    if (!confirm('Are you sure you want to delete this timesheet entry?')) {
-      return
-    }
+  // Delete timesheet entry - Open confirmation modal
+  const handleDeleteEntry = (id, entry) => {
+    setEntryToDelete({ id, entry })
+    setShowDeleteModal(true)
+  }
+
+  // Confirm delete timesheet entry
+  const confirmDeleteEntry = async () => {
+    if (!entryToDelete) return
 
     try {
-      const response = await timeSheetAPI.delete(id)
-      
+      const response = await timeSheetAPI.delete(entryToDelete.id)
+
       if (response.success) {
         toast.success('TimeSheet entry deleted successfully')
         loadEntries() // Reload entries
+        setShowDeleteModal(false)
+        setEntryToDelete(null)
       }
     } catch (error) {
       console.error('Error deleting timesheet entry:', error)
       toast.error('Error deleting timesheet entry')
     }
+  }
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setEntryToDelete(null)
   }
 
   // Format minutes to hours and minutes
@@ -452,7 +466,7 @@ const TimeSheet = ({
                   onEdit={() => setEditingId(entry._id)}
                   onSave={(updateData) => handleUpdateEntry(entry._id, updateData)}
                   onCancel={() => setEditingId(null)}
-                  onDelete={() => handleDeleteEntry(entry._id)}
+                  onDelete={() => handleDeleteEntry(entry._id, entry)}
                   formatTime={formatTime}
                   formatDate={formatDate}
                 />
@@ -493,8 +507,8 @@ const TimeSheet = ({
             <div className="flex justify-end mt-4">
               <button
                 onClick={handleExportToExcel}
-                className="flex items-center space-x-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700/50 
-                  border border-white/10 hover:border-cyan-400/30 rounded-lg text-gray-300 hover:text-cyan-400 
+                className="flex items-center space-x-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700/50
+                  border border-white/10 hover:border-cyan-400/30 rounded-lg text-gray-300 hover:text-cyan-400
                   transition-all duration-300 text-sm"
                 title="Export to Excel"
               >
@@ -503,6 +517,55 @@ const TimeSheet = ({
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && entryToDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 border border-white/10 rounded-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-white mb-4">
+              Delete TimeSheet Entry
+            </h3>
+            <div>
+              <p className="text-gray-300 mb-2">
+                Are you sure you want to delete this timesheet entry?
+              </p>
+              <div className="bg-slate-900/50 rounded-lg p-3 mb-6 border border-white/5">
+                <div className="text-sm space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-white">{formatDate(entryToDelete.entry.date)}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span className="text-white font-medium">{formatTime(entryToDelete.entry.timeMinutes)}</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <FileText className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <span className="text-white">{entryToDelete.entry.description}</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm mb-6">
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteEntry}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
