@@ -13,8 +13,20 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Password is required'],
-    minlength: [6, 'Password must be at least 6 characters'],
-    select: false // No incluir password en queries por defecto
+    minlength: [8, 'Password must be at least 8 characters'],
+    select: false, // No incluir password en queries por defecto
+    validate: {
+      validator: function(password) {
+        // Validar que la contraseña cumpla con los requisitos de seguridad
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+        
+        return hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+      },
+      message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    }
   },
   name: {
     type: String,
@@ -25,6 +37,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['admin', 'user', 'viewer'],
     default: 'user'
+  },
+  isSuperAdmin: {
+    type: Boolean,
+    default: false,
+    immutable: true // No se puede cambiar después de crear
   },
   isActive: {
     type: Boolean,

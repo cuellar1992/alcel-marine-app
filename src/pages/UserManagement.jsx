@@ -3,6 +3,9 @@ import { usersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Container from '../components/ui/Container';
+import PasswordStrengthBar from 'react-password-strength-bar';
+import PasswordRequirements from '../components/PasswordRequirements';
+import { Pencil, Key, UserCheck, UserX, Trash2 } from 'lucide-react';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -24,7 +27,28 @@ const UserManagement = () => {
     isActive: true
   });
 
+  const [passwordError, setPasswordError] = useState('');
+
   const { user: currentUser } = useAuth();
+
+  const validatePassword = (password) => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number';
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return 'Password must contain at least one special character';
+    }
+    return '';
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -64,6 +88,7 @@ const UserManagement = () => {
     setModalMode('create');
     setSelectedUser(null);
     setFormData({ name: '', email: '', password: '', role: 'user', isActive: true });
+    setPasswordError('');
     setShowModal(true);
   };
 
@@ -84,6 +109,7 @@ const UserManagement = () => {
     setModalMode('password');
     setSelectedUser(user);
     setFormData({ password: '', confirmPassword: '' });
+    setPasswordError('');
     setShowModal(true);
   };
 
@@ -108,13 +134,34 @@ const UserManagement = () => {
     e.preventDefault();
 
     try {
+      // Validar contraseña en modo crear o cambiar contraseña
+      if (modalMode === 'create' || modalMode === 'password') {
+        const error = validatePassword(formData.password);
+        if (error) {
+          setPasswordError(error);
+          toast.error(error);
+          return;
+        }
+      }
+
       if (modalMode === 'create') {
         await usersAPI.create(formData);
         toast.success('User created successfully');
       } else if (modalMode === 'edit') {
         const { password, ...updateData } = formData;
-        await usersAPI.update(selectedUser.id, updateData);
-        toast.success('User updated successfully');
+        const response = await usersAPI.update(selectedUser.id, updateData);
+        
+        // Si se devuelve un nuevo token, actualizarlo en localStorage
+        if (response.data.accessToken) {
+          localStorage.setItem('accessToken', response.data.accessToken);
+          // Actualizar el usuario en localStorage también
+          const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+          const updatedUser = { ...storedUser, ...response.data.user };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          toast.success('User updated successfully. Your session has been refreshed.');
+        } else {
+          toast.success('User updated successfully');
+        }
       } else if (modalMode === 'password') {
         if (formData.password !== formData.confirmPassword) {
           toast.error('Passwords do not match');
@@ -128,6 +175,7 @@ const UserManagement = () => {
       }
 
       setShowModal(false);
+      setPasswordError('');
       fetchUsers();
       fetchStats();
     } catch (error) {
@@ -240,13 +288,22 @@ const UserManagement = () => {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Role</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Status</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Last Login</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-300">Actions</th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {users.map((user) => (
                     <tr key={user.id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 text-white font-medium">{user.name}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium">{user.name}</span>
+                          {user.isSuperAdmin && (
+                            <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold rounded-full border border-yellow-400 shadow-lg">
+                              🔒 SUPER ADMIN
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-gray-300">{user.email}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(user.role)}`}>
@@ -266,37 +323,70 @@ const UserManagement = () => {
                         {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(user)}
-                            className="px-3 py-1 text-sm text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleChangePassword(user)}
-                            className="px-3 py-1 text-sm text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded transition-colors"
-                          >
-                            Password
-                          </button>
-                          <button
-                            onClick={() => handleToggleStatus(user)}
-                            className={`px-3 py-1 text-sm rounded transition-colors ${
-                              user.isActive
-                                ? 'text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10'
-                                : 'text-green-400 hover:text-green-300 hover:bg-green-500/10'
-                            }`}
-                            disabled={user.id === currentUser.id}
-                          >
-                            {user.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(user)}
-                            className="px-3 py-1 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
-                            disabled={user.id === currentUser.id}
-                          >
-                            Delete
-                          </button>
+                        <div className="flex items-center justify-center gap-2">
+                          {user.isSuperAdmin && user.id !== currentUser.id ? (
+                            // Super Admin visto por otro usuario
+                            <span className="text-gray-500 text-xs italic">Protected Account</span>
+                          ) : user.isSuperAdmin && user.id === currentUser.id ? (
+                            // Super Admin puede editar solo su perfil y contraseña
+                            <>
+                              <button
+                                onClick={() => handleEdit(user)}
+                                className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                title="Edit your profile"
+                              >
+                                <Pencil size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleChangePassword(user)}
+                                className="p-2 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg transition-colors"
+                                title="Change your password"
+                              >
+                                <Key size={18} />
+                              </button>
+                              <span className="text-gray-500 text-xs italic px-2">
+                                (Your Account)
+                              </span>
+                            </>
+                          ) : (
+                            // Usuario normal
+                            <>
+                              <button
+                                onClick={() => handleEdit(user)}
+                                className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                title="Edit user"
+                              >
+                                <Pencil size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleChangePassword(user)}
+                                className="p-2 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg transition-colors"
+                                title="Change password"
+                              >
+                                <Key size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleToggleStatus(user)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  user.isActive
+                                    ? 'text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10'
+                                    : 'text-green-400 hover:text-green-300 hover:bg-green-500/10'
+                                }`}
+                                disabled={user.id === currentUser.id}
+                                title={user.isActive ? 'Deactivate user' : 'Activate user'}
+                              >
+                                {user.isActive ? <UserX size={18} /> : <UserCheck size={18} />}
+                              </button>
+                              <button
+                                onClick={() => handleDelete(user)}
+                                className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={user.id === currentUser.id}
+                                title="Delete user"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -404,11 +494,29 @@ const UserManagement = () => {
                       <input
                         type="password"
                         value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full px-4 py-2 bg-slate-900 border border-white/10 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        onChange={(e) => {
+                          setFormData({ ...formData, password: e.target.value });
+                          setPasswordError('');
+                        }}
+                        className={`w-full px-4 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-cyan-500 ${
+                          passwordError ? 'border-red-500' : 'border-white/10'
+                        }`}
                         required
-                        minLength={6}
+                        minLength={8}
                       />
+                      {passwordError && (
+                        <p className="text-red-400 text-sm mt-1">{passwordError}</p>
+                      )}
+                      {formData.password && (
+                        <div className="mt-2">
+                          <PasswordStrengthBar
+                            password={formData.password}
+                            minLength={8}
+                            scoreWords={['very weak', 'weak', 'fair', 'good', 'strong']}
+                            shortScoreWord="too short"
+                          />
+                        </div>
+                      )}
                     </div>
                     {modalMode === 'password' && (
                       <div className="mb-4">
@@ -422,6 +530,9 @@ const UserManagement = () => {
                         />
                       </div>
                     )}
+                    <div className="mb-4">
+                      <PasswordRequirements password={formData.password} />
+                    </div>
                   </>
                 )}
 

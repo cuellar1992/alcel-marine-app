@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "nodemon server/start.js",
-    "dev:full": "concurrently \"npm run dev\" \"npm run server\""
+    "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
+    "seed:superadmin": "node server/seed-superadmin.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -31,6 +32,7 @@
     "react-datepicker": "^8.7.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.6.0",
+    "react-password-strength-bar": "^0.4.1",
     "react-router-dom": "^7.9.4",
     "recharts": "^3.3.0"
   },
