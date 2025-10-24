@@ -5,18 +5,86 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
-// Generic API call function
+// Helper function to get auth token
+const getAuthToken = () => {
+  return localStorage.getItem('accessToken')
+}
+
+// Helper function to refresh token
+const refreshAccessToken = async () => {
+  const refreshToken = localStorage.getItem('refreshToken')
+
+  if (!refreshToken) {
+    throw new Error('No refresh token available')
+  }
+
+  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refreshToken }),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    // Si el refresh falla, limpiar todo y redirigir a login
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('user')
+    window.location.href = '/login'
+    throw new Error('Session expired. Please login again.')
+  }
+
+  // Guardar nuevo access token
+  localStorage.setItem('accessToken', data.data.accessToken)
+  return data.data.accessToken
+}
+
+// Generic API call function with auth
 const apiCall = async (endpoint, options = {}) => {
   try {
+    const token = getAuthToken()
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
         ...options.headers,
       },
     })
 
     const data = await response.json()
+
+    // Si el token expiró (401), intentar refrescar
+    if (response.status === 401 && data.message?.includes('expired')) {
+      try {
+        const newToken = await refreshAccessToken()
+
+        // Reintentar la petición con el nuevo token
+        const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${newToken}`,
+            ...options.headers,
+          },
+        })
+
+        const retryData = await retryResponse.json()
+
+        if (!retryResponse.ok) {
+          throw new Error(retryData.message || 'API request failed')
+        }
+
+        return retryData
+      } catch (refreshError) {
+        // Si el refresh falla, el usuario será redirigido a login
+        throw refreshError
+      }
+    }
 
     if (!response.ok) {
       throw new Error(data.message || 'API request failed')
@@ -283,6 +351,60 @@ export const dashboardAPI = {
   
   // Get jobs by client
   getJobsByClient: () => apiCall('/dashboard/jobs-by-client'),
+}
+
+// Users API (Admin only)
+export const usersAPI = {
+  // Get all users
+  getAll: (page = 1, limit = 10, search = '', role = '', isActive = '') => {
+    let url = `/users?page=${page}&limit=${limit}`
+
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`
+    }
+    if (role) {
+      url += `&role=${role}`
+    }
+    if (isActive !== '') {
+      url += `&isActive=${isActive}`
+    }
+
+    return apiCall(url)
+  },
+
+  // Get single user
+  getById: (id) => apiCall(`/users/${id}`),
+
+  // Create new user
+  create: (userData) => apiCall('/users', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  }),
+
+  // Update user
+  update: (id, userData) => apiCall(`/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  }),
+
+  // Delete user
+  delete: (id) => apiCall(`/users/${id}`, {
+    method: 'DELETE',
+  }),
+
+  // Change user password
+  changePassword: (id, newPassword) => apiCall(`/users/${id}/password`, {
+    method: 'PUT',
+    body: JSON.stringify({ newPassword }),
+  }),
+
+  // Toggle user status (activate/deactivate)
+  toggleStatus: (id) => apiCall(`/users/${id}/toggle-status`, {
+    method: 'PATCH',
+  }),
+
+  // Get user statistics
+  getStats: () => apiCall('/users/stats'),
 }
 
 // Health check

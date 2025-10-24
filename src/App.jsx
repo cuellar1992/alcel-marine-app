@@ -3,21 +3,68 @@
  * React Router implementation with page navigation and React Hot Toast
  */
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { Layout } from './components/layout'
 import { Home, MarineNonClaims, MarineClaims } from './pages'
+import Login from './pages/Login'
+import UserManagement from './pages/UserManagement'
+import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
     <Router>
-      <Layout>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/ballast-bunker" element={<MarineNonClaims />} />
-          <Route path="/marine-claims" element={<MarineClaims />} />
+          {/* Public route */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Protected routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Home />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ballast-bunker"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <MarineNonClaims />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/marine-claims"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <MarineClaims />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <Layout>
+                  <UserManagement />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Redirect unknown routes to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Layout>
       
       {/* React Hot Toast - Premium Configuration */}
       <Toaster
@@ -63,6 +110,7 @@ function App() {
           },
         }}
       />
+      </AuthProvider>
     </Router>
   )
 }

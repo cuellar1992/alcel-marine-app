@@ -10,16 +10,21 @@ import {
   updateClient,
   deleteClient
 } from '../controllers/clientController.js'
+import { authenticate } from '../middleware/authMiddleware.js'
+import { requireAdmin, requireUserOrAdmin } from '../middleware/roleMiddleware.js'
 
 const router = express.Router()
 
+// All routes require authentication
+router.use(authenticate)
+
 router.route('/')
   .get(getAllClients)
-  .post(createClient)
+  .post(requireUserOrAdmin, createClient)
 
 router.route('/:id')
-  .put(updateClient)
-  .delete(deleteClient)
+  .put(requireUserOrAdmin, updateClient)
+  .delete(requireAdmin, deleteClient)
 
 export default router
 
