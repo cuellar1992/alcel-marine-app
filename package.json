@@ -8,8 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "nodemon server/start.js",
+    "server:prod": "NODE_ENV=production node server/start.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
-    "seed:superadmin": "node server/seed-superadmin.js"
+    "seed:superadmin": "node server/seed-superadmin.js",
+    "start": "node server/start.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
