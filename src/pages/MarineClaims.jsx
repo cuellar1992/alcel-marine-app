@@ -10,12 +10,14 @@ import { claimsAPI } from '../services'
 import { useConfirm } from '../hooks'
 import { exportClaimsToExcel } from '../utils'
 import { Pencil, Trash2, RotateCw, Clock, Edit3, Trash, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import TimeSheetFullScreenModal from '../components/TimeSheetFullScreenModal'
 
 export default function MarineClaims() {
   const confirmDialog = useConfirm()
   
   const [formData, setFormData] = useState({
     jobNumber: '',
+    clientName: '',
     registrationDate: null,
     clientRef: '',
     claimName: '',
@@ -33,7 +35,12 @@ export default function MarineClaims() {
   const [viewingClaim, setViewingClaim] = useState(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [claimHistory, setClaimHistory] = useState([])
-  
+
+  // TimeSheet Full Screen Modal
+  const [isTimeSheetModalOpen, setIsTimeSheetModalOpen] = useState(false)
+  const [timeSheetClaimId, setTimeSheetClaimId] = useState(null)
+  const [timeSheetClaimInfo, setTimeSheetClaimInfo] = useState(null)
+
   // Sorting
   const [sortOrder, setSortOrder] = useState(null) // null, 'asc', 'desc'
   
@@ -209,6 +216,7 @@ export default function MarineClaims() {
       // Clear form and reload claims
       setFormData({
         jobNumber: '',
+        clientName: '',
         registrationDate: null,
         clientRef: '',
         claimName: '',
@@ -255,6 +263,7 @@ export default function MarineClaims() {
     setEditingClaim(claim)
     setFormData({
       jobNumber: claim.jobNumber,
+      clientName: claim.clientName || '',
       registrationDate: new Date(claim.registrationDate),
       clientRef: claim.clientRef,
       claimName: claim.claimName,
@@ -295,6 +304,7 @@ export default function MarineClaims() {
     setEditingClaim(null)
     setFormData({
       jobNumber: '',
+      clientName: '',
       registrationDate: null,
       clientRef: '',
       claimName: '',
@@ -383,6 +393,16 @@ export default function MarineClaims() {
                 <p className="text-xs text-gray-500 italic">Auto-generated when you enter claim name</p>
               )}
             </div>
+
+            {/* Client Name */}
+            <Input
+              label="Client Name"
+              name="clientName"
+              value={formData.clientName}
+              onChange={handleChange}
+              placeholder="Enter client name"
+              required
+            />
 
             {/* Registration Date - with Today button */}
             <DatePicker
@@ -521,6 +541,7 @@ export default function MarineClaims() {
               onClick={() => {
                 setFormData({
                   jobNumber: '',
+                  clientName: '',
                   registrationDate: null,
                   clientRef: '',
                   claimName: '',
@@ -620,14 +641,21 @@ export default function MarineClaims() {
                 <span className="font-mono font-semibold text-cyan-400">{value}</span>
               )
             },
-            { 
-              key: 'claimName', 
+            {
+              key: 'clientName',
+              label: 'Client',
+              render: (value) => (
+                <span className="text-gray-300">{value}</span>
+              )
+            },
+            {
+              key: 'claimName',
               label: 'Claim Name',
               render: (value) => (
                 <span className="font-semibold text-white">{value}</span>
               )
             },
-            { 
+            {
               key: 'registrationDate', 
               label: 'Registration Date',
               render: (value) => (
@@ -710,6 +738,11 @@ export default function MarineClaims() {
             {/* Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Client Name</p>
+                <p className="text-lg font-semibold text-white">{viewingClaim.clientName}</p>
+              </div>
+
+              <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Claim Name</p>
                 <p className="text-lg font-semibold text-white">{viewingClaim.claimName}</p>
               </div>
@@ -775,9 +808,17 @@ export default function MarineClaims() {
 
             {/* Time Sheet Section */}
             <div className="border-t border-white/10 pt-6 mt-6">
-              <TimeSheet 
-                claimId={viewingClaim._id} 
+              <TimeSheet
+                claimId={viewingClaim._id}
                 isVisible={true}
+                onHeaderClick={() => {
+                  setTimeSheetClaimId(viewingClaim._id)
+                  setTimeSheetClaimInfo({
+                    jobNumber: viewingClaim.jobNumber,
+                    claimName: viewingClaim.claimName
+                  })
+                  setIsTimeSheetModalOpen(true)
+                }}
               />
             </div>
 
@@ -942,6 +983,18 @@ export default function MarineClaims() {
         title={confirmDialog.config.title}
         message={confirmDialog.config.message}
         type={confirmDialog.config.type}
+      />
+
+      {/* TimeSheet Full Screen Modal */}
+      <TimeSheetFullScreenModal
+        isOpen={isTimeSheetModalOpen}
+        onClose={() => {
+          setIsTimeSheetModalOpen(false)
+          setTimeSheetClaimId(null)
+          setTimeSheetClaimInfo(null)
+        }}
+        claimId={timeSheetClaimId}
+        claimInfo={timeSheetClaimInfo}
       />
     </Container>
   )

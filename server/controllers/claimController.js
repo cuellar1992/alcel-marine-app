@@ -95,6 +95,7 @@ const getAllClaims = async (req, res) => {
       if (searchField === 'all') {
         query.$or = [
           { jobNumber: { $regex: search, $options: 'i' } },
+          { clientName: { $regex: search, $options: 'i' } },
           { claimName: { $regex: search, $options: 'i' } },
           { location: { $regex: search, $options: 'i' } },
           { clientRef: { $regex: search, $options: 'i' } }

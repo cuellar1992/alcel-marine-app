@@ -12,6 +12,11 @@ const claimSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  clientName: {
+    type: String,
+    required: true,
+    trim: true
+  },
   registrationDate: {
     type: Date,
     required: true
