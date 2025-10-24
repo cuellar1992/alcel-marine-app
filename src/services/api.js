@@ -58,31 +58,48 @@ const apiCall = async (endpoint, options = {}) => {
 
     const data = await response.json()
 
-    // Si el token expiró (401), intentar refrescar
-    if (response.status === 401 && data.message?.includes('expired')) {
-      try {
-        const newToken = await refreshAccessToken()
+    // Si recibimos 401 (Unauthorized), intentar refrescar el token
+    if (response.status === 401) {
+      // Solo intentar refresh si el mensaje indica token expirado/inválido
+      // No intentar si es "No token provided" (usuario no logueado)
+      const shouldRefresh = data.message?.includes('expired') ||
+                           data.message?.includes('Invalid or expired')
 
-        // Reintentar la petición con el nuevo token
-        const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
-          ...options,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${newToken}`,
-            ...options.headers,
-          },
-        })
+      if (shouldRefresh && localStorage.getItem('refreshToken')) {
+        try {
+          const newToken = await refreshAccessToken()
 
-        const retryData = await retryResponse.json()
+          // Reintentar la petición con el nuevo token
+          const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${newToken}`,
+              ...options.headers,
+            },
+          })
 
-        if (!retryResponse.ok) {
-          throw new Error(retryData.message || 'API request failed')
+          const retryData = await retryResponse.json()
+
+          if (!retryResponse.ok) {
+            throw new Error(retryData.message || 'API request failed')
+          }
+
+          return retryData
+        } catch (refreshError) {
+          // Si el refresh falla, el usuario será redirigido a login
+          throw refreshError
         }
-
-        return retryData
-      } catch (refreshError) {
-        // Si el refresh falla, el usuario será redirigido a login
-        throw refreshError
+      } else {
+        // No hay refresh token o el usuario no está logueado
+        // Redirigir a login solo si estamos en una página protegida
+        if (!window.location.pathname.includes('/login')) {
+          localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
+          localStorage.removeItem('user')
+          window.location.href = '/login'
+        }
+        throw new Error(data.message || 'Unauthorized')
       }
     }
 

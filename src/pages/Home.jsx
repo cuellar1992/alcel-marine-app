@@ -22,49 +22,27 @@ import {
   TrendingUp,
   FileText,
   DollarSign,
-  AlertCircle,
-  RefreshCw
+  AlertCircle
 } from 'lucide-react'
 
 export default function Home() {
-  const { cache, loading, fetchDashboardData, refreshDashboard, isCacheValid } = useDashboardCache()
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const { cache, loading, fetchDashboardData } = useDashboardCache()
 
   useEffect(() => {
     // Cargar datos solo si el caché no es válido
     fetchDashboardData()
   }, [fetchDashboardData])
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
-    await refreshDashboard()
-    setIsRefreshing(false)
-  }
-
   return (
     <Container className="py-8">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent mb-2">
-            Dashboard
-          </h1>
-          <p className="text-gray-400">
-            Marine Operations Overview & Analytics
-            {isCacheValid && <span className="ml-2 text-xs text-green-400">● Cached</span>}
-          </p>
-        </div>
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing || loading}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-white/10
-            hover:border-cyan-400/30 rounded-lg text-gray-300 hover:text-cyan-400 transition-all duration-300
-            disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Refresh dashboard data"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span className="text-sm">Refresh</span>
-        </button>
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent mb-2">
+          Dashboard
+        </h1>
+        <p className="text-gray-400">
+          Marine Operations Overview & Analytics
+        </p>
       </div>
 
       {/* KPI Cards */}

@@ -7,12 +7,13 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Container, Card, Input, Select, Textarea, Button, Modal, DateTimePicker, Table, ConfirmDialog, Pagination, SearchBar, AdvancedFilters } from '../components/ui'
 import { jobsAPI, jobTypesAPI, portsAPI, clientsAPI } from '../services'
-import { useConfirm } from '../hooks'
+import { useConfirm, useCacheInvalidation } from '../hooks'
 import { exportJobsToExcel } from '../utils'
 import { Pencil, Trash2, Plus, RotateCw, Settings, Clock, Edit3, Trash, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 export default function MarineNonClaims() {
   const confirmDialog = useConfirm()
+  const { invalidateCache } = useCacheInvalidation()
   
   const [formData, setFormData] = useState({
     jobNumber: '',
@@ -335,14 +336,16 @@ export default function MarineNonClaims() {
         if (response.success) {
           toast.success('Job updated successfully!')
           setEditingJob(null)
+          invalidateCache() // Invalidate dashboard cache after update
         }
       } else {
         const response = await jobsAPI.create(formData)
         if (response.success) {
           toast.success('Job created successfully!')
+          invalidateCache() // Invalidate dashboard cache after create
         }
       }
-      
+
       // Clear form and reload jobs
       setEtdError('')
       setFormData({
@@ -426,6 +429,7 @@ export default function MarineNonClaims() {
           const response = await jobsAPI.delete(id)
           if (response.success) {
             toast.success('Job deleted successfully!')
+            invalidateCache() // Invalidate dashboard cache after delete
             await loadJobs()
           }
         } catch (error) {
