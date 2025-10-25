@@ -84,7 +84,7 @@ PORT=5000
 # MongoDB Configuration
 <<<<<<< HEAD
 # ⚠️ Replace with your actual MongoDB Atlas credentials
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
+MONGODB_URI=your-secret-key-here
 =======
 MONGODB_URI= username and password 
 >>>>>>> f4b607baac5d83319cdded8ce5905dff4e6dd164
