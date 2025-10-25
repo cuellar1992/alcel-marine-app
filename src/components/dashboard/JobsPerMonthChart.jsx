@@ -50,16 +50,48 @@ export default function JobsPerMonthChart({ data, loading = false }) {
   })
   const jobTypes = Array.from(jobTypesSet)
 
-  // Colors for different job types (Vibrant palette)
+  // Colors for different job types with gradients and shadows
   const jobTypeColors = {
-    'Claims': '#9333EA',     // Púrpura for Claims
-    'ballast': '#3B82F6',    // Azul vibrante
-    'bunker': '#22C55E',     // Verde brillante
-    'bunkers': '#22C55E',    // Verde brillante (alias)
-    'cargo': '#F97316',      // Naranja intenso
-    'survey': '#EAB308',     // Amarillo vivo
-    'inspection': '#14B8A6', // Teal
-    'other': '#DC2626'       // Rojo
+    'Claims': {
+      primary: '#9333EA',
+      gradient: ['#A855F7', '#9333EA', '#7C3AED'],
+      shadow: 'rgba(147, 51, 234, 0.4)'
+    },
+    'ballast': {
+      primary: '#3B82F6',
+      gradient: ['#60A5FA', '#3B82F6', '#1D4ED8'],
+      shadow: 'rgba(59, 130, 246, 0.4)'
+    },
+    'bunker': {
+      primary: '#22C55E',
+      gradient: ['#4ADE80', '#22C55E', '#16A34A'],
+      shadow: 'rgba(34, 197, 94, 0.4)'
+    },
+    'bunkers': {
+      primary: '#22C55E',
+      gradient: ['#4ADE80', '#22C55E', '#16A34A'],
+      shadow: 'rgba(34, 197, 94, 0.4)'
+    },
+    'cargo': {
+      primary: '#F97316',
+      gradient: ['#FB923C', '#F97316', '#EA580C'],
+      shadow: 'rgba(249, 115, 22, 0.4)'
+    },
+    'survey': {
+      primary: '#EAB308',
+      gradient: ['#FDE047', '#EAB308', '#CA8A04'],
+      shadow: 'rgba(234, 179, 8, 0.4)'
+    },
+    'inspection': {
+      primary: '#14B8A6',
+      gradient: ['#2DD4BF', '#14B8A6', '#0D9488'],
+      shadow: 'rgba(20, 184, 166, 0.4)'
+    },
+    'other': {
+      primary: '#DC2626',
+      gradient: ['#F87171', '#DC2626', '#B91C1C'],
+      shadow: 'rgba(220, 38, 38, 0.4)'
+    }
   }
 
   // Format job type name for display
@@ -76,30 +108,50 @@ export default function JobsPerMonthChart({ data, loading = false }) {
   const barWidth = numberOfMonths <= 3 ? 24 : numberOfMonths <= 6 ? 20 : 18
   const categoryGap = numberOfMonths <= 3 ? '50%' : numberOfMonths <= 6 ? '45%' : '40%'
 
-  // Prepare series data for grouped bar chart
-  const series = jobTypes.map(jobType => ({
-    name: formatJobType(jobType),
-    type: 'bar',
-    barWidth: barWidth, // Ancho dinámico según cantidad de meses
-    barGap: '20%', // Espacio entre barras del mismo grupo
-    barCategoryGap: categoryGap, // Espacio entre grupos de barras (meses)
-    itemStyle: {
-      color: jobTypeColors[jobType] || '#6b7280',
-      borderRadius: [6, 6, 0, 0]
-    },
-    emphasis: {
+  // Prepare series data for grouped bar chart with gradients
+  const series = jobTypes.map(jobType => {
+    const colorConfig = jobTypeColors[jobType] || { primary: '#6b7280', gradient: ['#6b7280'], shadow: 'rgba(107, 114, 128, 0.4)' }
+    
+    return {
+      name: formatJobType(jobType),
+      type: 'bar',
+      barWidth: barWidth,
+      barGap: '20%',
+      barCategoryGap: categoryGap,
       itemStyle: {
-        shadowBlur: 10,
-        shadowColor: 'rgba(0, 0, 0, 0.5)',
-        borderWidth: 2,
-        borderColor: '#fff'
-      }
-    },
-    data: chartData.map(month => month[jobType] || 0),
-    animationDuration: 1500,
-    animationEasing: 'elasticOut',
-    animationDelay: (idx) => idx * 50
-  }))
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0, color: colorConfig.gradient[0] },
+            { offset: 0.7, color: colorConfig.gradient[1] || colorConfig.primary },
+            { offset: 1, color: colorConfig.gradient[2] || colorConfig.primary }
+          ]
+        },
+        borderRadius: [8, 8, 0, 0],
+        shadowBlur: 8,
+        shadowColor: colorConfig.shadow,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)'
+      },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 15,
+          shadowColor: colorConfig.shadow,
+          borderWidth: 2,
+          borderColor: 'rgba(255, 255, 255, 0.3)',
+          scale: 1.05
+        }
+      },
+      data: chartData.map(month => month[jobType] || 0),
+      animationDuration: 2000,
+      animationEasing: 'elasticOut',
+      animationDelay: (idx) => idx * 100
+    }
+  })
 
   const option = {
     backgroundColor: 'transparent',
@@ -202,25 +254,49 @@ export default function JobsPerMonthChart({ data, loading = false }) {
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
+    <div className="relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-2xl overflow-hidden">
+      {/* Efecto de brillo sutil */}
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5 pointer-events-none"></div>
+      
+      {/* Header con icono */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Jobs Per Month (All Types)</h3>
-        <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded">
-          {new Date().getFullYear()}
-        </span>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-white">Jobs Per Month (All Types)</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
+            {new Date().getFullYear()}
+          </span>
+          <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+        </div>
       </div>
+      
       {chartData.length > 0 ? (
-        <ReactECharts
-          option={option}
-          style={{ height: '320px' }}
-          opts={{ renderer: 'svg' }}
-        />
+        <div className="relative">
+          <ReactECharts
+            option={option}
+            style={{ height: '340px' }}
+            opts={{ renderer: 'svg' }}
+          />
+          {/* Indicador de interactividad */}
+          <div className="absolute bottom-2 right-2 text-xs text-gray-500 opacity-60">
+            Hover for details
+          </div>
+        </div>
       ) : (
-        <div className="h-80 flex items-center justify-center text-gray-400">
-          <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <p className="text-sm">No jobs data for this year</p>
+        <div className="h-80 flex flex-col items-center justify-center text-gray-400">
+          <div className="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium">No jobs data for this year</p>
+          <p className="text-xs text-gray-500 mt-1">Jobs will appear here once created</p>
         </div>
       )}
     </div>
