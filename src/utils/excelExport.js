@@ -426,6 +426,7 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
     // Define columns with headers and widths
     const columns = [
       { header: 'Job Number', key: 'jobNumber', width: 18 },
+      { header: 'Client Name', key: 'clientName', width: 25 },
       { header: 'Claim Name', key: 'claimName', width: 30 },
       { header: 'Registration Date', key: 'registrationDate', width: 20 },
       { header: 'Client Ref', key: 'clientRef', width: 20 },
@@ -437,9 +438,9 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
     // Add financial columns if any claim has financial data
     if (hasFinancialData) {
       columns.push(
-        { header: 'Invoice Amount (AUD)', key: 'invoiceAmount', width: 20 },
-        { header: 'Subcontract Amount (AUD)', key: 'subcontractAmount', width: 22 },
-        { header: 'Net Profit (AUD)', key: 'netProfit', width: 18 }
+        { header: 'Invoice Amount', key: 'invoiceAmount', width: 18 },
+        { header: 'Subcontract Amount', key: 'subcontractAmount', width: 20 },
+        { header: 'Net Profit', key: 'netProfit', width: 15 }
       )
     }
 
@@ -475,19 +476,20 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
       const rowData = {
         jobNumber: claim.jobNumber,
         claimName: claim.claimName,
-        registrationDate: registrationDate.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: '2-digit', 
-          year: 'numeric' 
+        clientName: claim.clientName,
+        registrationDate: registrationDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit',
+          year: 'numeric'
         }),
         clientRef: claim.clientRef,
         location: claim.location,
-        siteInspection: siteInspection ? `${siteInspection.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: '2-digit', 
-          year: 'numeric' 
-        })} ${siteInspection.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
+        siteInspection: siteInspection ? `${siteInspection.toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit',
+          year: 'numeric'
+        })} ${siteInspection.toLocaleTimeString('en-US', {
+          hour: '2-digit',
           minute: '2-digit',
           hour12: false
         })}` : '',
@@ -567,6 +569,7 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
     // Add summary row at the bottom
     const summaryData = {
       jobNumber: '',
+      clientName: '',
       claimName: `Total Claims: ${sortedClaims.length}`,
       registrationDate: '',
       clientRef: '',
@@ -639,6 +642,7 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
     // Add generation info to summary
     const lastRow = worksheet.addRow({
       jobNumber: '',
+      clientName: '',
       claimName: '',
       registrationDate: '',
       clientRef: '',
