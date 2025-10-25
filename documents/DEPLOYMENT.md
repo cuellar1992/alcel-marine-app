@@ -36,12 +36,16 @@
 4. **Super Admin** - Create initial admin account
 5. **CORS** - Configure allowed origins
 6. **Build** - Test production build
+<<<<<<< HEAD
 7. **Security** - NEVER commit `.env` files to Git (use `.env.example` instead)
+=======
+>>>>>>> f4b607baac5d83319cdded8ce5905dff4e6dd164
 
 ---
 
 ## Environment Setup
 
+<<<<<<< HEAD
 ### 🔒 Important Security Note
 
 **NEVER commit `.env` files to Git!** Always use `.env.example` as a template.
@@ -54,6 +58,11 @@ To set up your environment:
 ### 1. Frontend Environment Variables
 
 Create `.env` in root directory (copy from `.env.example`):
+=======
+### 1. Frontend Environment Variables
+
+Create `.env` in root directory:
+>>>>>>> f4b607baac5d83319cdded8ce5905dff4e6dd164
 
 ```bash
 VITE_API_URL=https://your-production-api.com/api
@@ -61,7 +70,11 @@ VITE_API_URL=https://your-production-api.com/api
 
 ### 2. Backend Environment Variables
 
+<<<<<<< HEAD
 Create `server/.env` (copy from `server/.env.example`):
+=======
+Create `server/.env`:
+>>>>>>> f4b607baac5d83319cdded8ce5905dff4e6dd164
 
 ```bash
 # Server Configuration
@@ -69,8 +82,12 @@ NODE_ENV=production
 PORT=5000
 
 # MongoDB Configuration
+<<<<<<< HEAD
 # ⚠️ Replace with your actual MongoDB Atlas credentials
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
+=======
+MONGODB_URI= username and password 
+>>>>>>> f4b607baac5d83319cdded8ce5905dff4e6dd164
 
 # JWT Configuration (GENERATE NEW SECRETS!)
 # Generate using: openssl rand -base64 32
@@ -285,9 +302,13 @@ curl -X POST https://your-api.com/api/auth/login \
 - [ ] Test authentication flow
 - [ ] Review error messages (no sensitive data exposed)
 - [ ] Check HTTPS is enforced
+<<<<<<< HEAD
 - [ ] **CRITICAL:** Verify .env files are NOT committed to Git
 - [ ] Rotate MongoDB credentials if they were exposed
 - [ ] Review Git history for leaked secrets (use `git log --all --full-history -- ".env"`)
+=======
+- [ ] Verify .env files are not committed to git
+>>>>>>> f4b607baac5d83319cdded8ce5905dff4e6dd164
 
 ### 3. Performance Optimization
 
