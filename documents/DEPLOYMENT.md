@@ -36,14 +36,24 @@
 4. **Super Admin** - Create initial admin account
 5. **CORS** - Configure allowed origins
 6. **Build** - Test production build
+7. **Security** - NEVER commit `.env` files to Git (use `.env.example` instead)
 
 ---
 
 ## Environment Setup
 
+### 🔒 Important Security Note
+
+**NEVER commit `.env` files to Git!** Always use `.env.example` as a template.
+
+To set up your environment:
+1. Copy `.env.example` to `.env`
+2. Fill in your actual credentials
+3. Verify `.env` is listed in `.gitignore`
+
 ### 1. Frontend Environment Variables
 
-Create `.env` in root directory:
+Create `.env` in root directory (copy from `.env.example`):
 
 ```bash
 VITE_API_URL=https://your-production-api.com/api
@@ -51,7 +61,7 @@ VITE_API_URL=https://your-production-api.com/api
 
 ### 2. Backend Environment Variables
 
-Create `server/.env`:
+Create `server/.env` (copy from `server/.env.example`):
 
 ```bash
 # Server Configuration
@@ -59,7 +69,8 @@ NODE_ENV=production
 PORT=5000
 
 # MongoDB Configuration
-MONGODB_URI= username and password 
+# ⚠️ Replace with your actual MongoDB Atlas credentials
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
 
 # JWT Configuration (GENERATE NEW SECRETS!)
 # Generate using: openssl rand -base64 32
@@ -274,7 +285,9 @@ curl -X POST https://your-api.com/api/auth/login \
 - [ ] Test authentication flow
 - [ ] Review error messages (no sensitive data exposed)
 - [ ] Check HTTPS is enforced
-- [ ] Verify .env files are not committed to git
+- [ ] **CRITICAL:** Verify .env files are NOT committed to Git
+- [ ] Rotate MongoDB credentials if they were exposed
+- [ ] Review Git history for leaked secrets (use `git log --all --full-history -- ".env"`)
 
 ### 3. Performance Optimization
 
