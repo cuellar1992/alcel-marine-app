@@ -59,7 +59,7 @@ NODE_ENV=production
 PORT=5000
 
 # MongoDB Configuration
-MONGODB_URI=mongodb+srv://username:password@your-cluster.mongodb.net/alcel-marine?retryWrites=true&w=majority
+MONGODB_URI= username and password 
 
 # JWT Configuration (GENERATE NEW SECRETS!)
 # Generate using: openssl rand -base64 32
