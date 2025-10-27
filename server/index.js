@@ -84,22 +84,27 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static files from the dist folder
   app.use(express.static(distPath))
 
-  // Handle client-side routing - send all non-API requests to index.html
-  app.get('/*', (req, res) => {
-    // Don't interfere with API routes
+  console.log('📦 Serving static files from:', distPath)
+}
+
+// Handle client-side routing in production - MUST be after all API routes
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '..', 'dist')
+  app.use((req, res, next) => {
+    // If it's not an API route, serve index.html
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(distPath, 'index.html'))
+    } else {
+      next()
     }
   })
-
-  console.log('📦 Serving static files from:', distPath)
 }
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack)
-  res.status(500).json({ 
-    success: false, 
+  res.status(500).json({
+    success: false,
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   })
