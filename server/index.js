@@ -8,7 +8,13 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import connectDB from './config/database.js'
+
+// Get directory name for ES modules
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Import routes
 import jobRoutes from './routes/jobRoutes.js'
@@ -63,12 +69,31 @@ app.use('/api/dashboard', dashboardRoutes)
 
 // Health check route
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     message: 'Alcel Marine API is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
   })
 })
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '..', 'dist')
+
+  // Serve static files from the dist folder
+  app.use(express.static(distPath))
+
+  // Handle client-side routing - send all non-API requests to index.html
+  app.get('*', (req, res) => {
+    // Don't interfere with API routes
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(distPath, 'index.html'))
+    }
+  })
+
+  console.log('📦 Serving static files from:', distPath)
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

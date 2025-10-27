@@ -1,154 +1,232 @@
 # ⚓ Alcel Marine App
 
-Modern web application built with **React** and **Tailwind CSS** using a **modular, scalable architecture**.
+Sistema de gestión integral para operaciones marítimas de Alcel Marine.
 
-## 🚀 Technologies
+Sistema web moderno construido con **React**, **Node.js** y **MongoDB** usando una **arquitectura modular y escalable**.
 
-- **React 18** - Modern UI library with latest features
-- **Tailwind CSS 3** - Utility-first CSS framework
-- **Vite** - Lightning-fast build tool and dev server
+## 🚀 Stack Tecnológico
 
-## ✨ Key Features
+### Frontend
+- **React 18** - Librería UI moderna
+- **Tailwind CSS 3** - Framework CSS utility-first
+- **Vite** - Build tool y dev server ultrarrápido
+- **ECharts** - Gráficos y visualizaciones
+- **React Router** - Navegación
 
-- 🎨 **Elegant Dark Mode Design** - Beautiful glassmorphism effects
-- 🧩 **Modular Architecture** - Add features without breaking existing code
-- 📦 **Reusable Components** - Pre-built UI components ready to use
-- 🔧 **Easy Maintenance** - Well-organized, documented code
-- 🚀 **Fast Development** - Hot reload and instant feedback
+### Backend
+- **Node.js** - Runtime JavaScript
+- **Express** - Framework web
+- **MongoDB** - Base de datos NoSQL
+- **Mongoose** - ODM para MongoDB
+- **JWT** - Autenticación segura
+
+## ✨ Features Principales
+
+- ⚓ **Gestión de Jobs** - Control completo de trabajos marítimos
+- 👥 **Gestión de Clientes** - Base de datos de clientes y contactos
+- 🏢 **Control de Puertos** - Administración de puertos y ubicaciones
+- ⏱️ **Timesheet** - Seguimiento de horas de empleados
+- 📋 **Claims** - Gestión de reclamos y seguimiento
+- 📊 **Dashboard** - Métricas y gráficos en tiempo real
+- 🔐 **Autenticación JWT** - Sistema seguro de login con 2FA
+- 👨‍💼 **Gestión de Usuarios** - Control de roles y permisos
+- 📤 **Exportación Excel** - Reportes descargables
+- 📱 **QR Codes** - Generación automática para jobs
 
 ## 📦 Quick Start
 
-### Installation
+### Instalación
 
 ```bash
+# Instalar dependencias
 npm install
+
+# Configurar variables de entorno
+cp .env.example .env
+# Edita .env con tus credenciales
 ```
 
-### Development
+### Desarrollo
 
 ```bash
-npm run dev
+# Iniciar frontend + backend
+npm run dev:full
+
+# O por separado:
+npm run dev      # Solo frontend
+npm run server   # Solo backend
 ```
 
-Open **http://localhost:5174** in your browser
+Accede a:
+- Frontend: http://localhost:5173
+- Backend: http://localhost:5000
+- Health Check: http://localhost:5000/api/health
 
-### Production Build
+### Build de Producción
 
 ```bash
 npm run build
-npm run preview
+npm run start:production
 ```
 
-## 📁 Project Structure
+## 📁 Estructura del Proyecto
 
 ```
-src/
-├── components/          # Reusable UI components
-│   ├── ui/             # Button, Card, Container
-│   └── layout/         # Header, Footer, Layout
-├── features/           # Self-contained feature modules
-│   ├── Counter/
-│   ├── Welcome/
-│   └── FeatureCards/
-├── hooks/              # Custom React hooks
-├── utils/              # Helper functions and constants
-├── App.jsx             # Main app component
-└── main.jsx            # React entry point
+alcel-marine-app/
+├── .do/                    # Configuración Digital Ocean
+│   ├── app.yaml           # Config detallada
+│   └── deploy.template.yaml
+├── server/                 # Backend
+│   ├── config/            # Configuraciones
+│   ├── controllers/       # Lógica de negocio
+│   ├── middleware/        # Autenticación, etc.
+│   ├── models/            # Modelos MongoDB
+│   ├── routes/            # Rutas API
+│   ├── utils/             # Utilidades
+│   ├── index.js          # Servidor Express
+│   └── start.js          # Script de inicio
+├── src/                   # Frontend
+│   ├── components/       # Componentes React
+│   ├── pages/           # Páginas principales
+│   ├── services/        # API calls
+│   └── App.jsx          # App principal
+├── DEPLOYMENT.md         # Guía de deployment
+├── WORKFLOW.md          # Flujo de trabajo
+└── DIGITAL-OCEAN-SETUP.md # Setup Digital Ocean
 ```
 
-## 📚 Documentation
+## 📚 Documentación
 
-All detailed documentation is organized in the `/documents` folder:
+### Guías de Deployment y Desarrollo:
 
-- 📖 **[documents/INDEX.md](documents/INDEX.md)** - Complete documentation index
-- 📁 **[documents/PROJECT_STRUCTURE.md](documents/PROJECT_STRUCTURE.md)** - Detailed architecture
-- 🛠️ **[documents/DEVELOPMENT_GUIDE.md](documents/DEVELOPMENT_GUIDE.md)** - Step-by-step development
-- ⚡ **[documents/QUICK_REFERENCE.md](documents/QUICK_REFERENCE.md)** - Quick component reference
-- 🔧 **[documents/BACKEND_SETUP.md](documents/BACKEND_SETUP.md)** - MongoDB Atlas configuration
+- 🚀 **[WORKFLOW.md](./WORKFLOW.md)** - Guía rápida del flujo de trabajo diario
+- 📖 **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Documentación completa de deployment
+- ⚙️ **[DIGITAL-OCEAN-SETUP.md](./DIGITAL-OCEAN-SETUP.md)** - Setup paso a paso en Digital Ocean
 
-## 🎯 Adding a New Feature
+### Documentación Técnica:
 
-1. Create folder: `src/features/MyFeature/`
-2. Build component: `MyFeature.jsx`
-3. Export: `index.js`
-4. Import in `App.jsx`
+- 📁 **[documents/INDEX.md](documents/INDEX.md)** - Índice completo de documentación
+- 🛠️ **[documents/DEVELOPMENT_GUIDE.md](documents/DEVELOPMENT_GUIDE.md)** - Guía de desarrollo
+- 🔧 **[documents/BACKEND_SETUP.md](documents/BACKEND_SETUP.md)** - Configuración backend
 
-**That's it!** No existing code is modified.
+## 🔄 Flujo de Deployment
 
-See [DEVELOPMENT_GUIDE.md](documents/DEVELOPMENT_GUIDE.md) for detailed examples.
+```
+Desarrollo Local → GitHub (push) → Digital Ocean → Producción
+  (localhost)        (main)         (auto-deploy)     (live)
+```
 
-## 🎨 Available Components
+1. Desarrolla y prueba localmente: `npm run dev:full`
+2. Haz push a `main`: `git push origin main`
+3. Digital Ocean detecta el cambio automáticamente
+4. Build y deploy automático (3-5 minutos)
+5. App actualizada en producción ✅
 
-### UI Components
-- **Button** - Multiple variants (primary, secondary, outline, ghost)
-- **Card** - Glass effect containers with hover states
-- **Container** - Responsive page containers
+**Ver [WORKFLOW.md](./WORKFLOW.md) para guía detallada del flujo diario.**
 
-### Layout Components
-- **Layout** - Page wrapper with header and footer
-- **Header** - Sticky navigation header
-- **Footer** - Application footer
+## 🛠️ Scripts Disponibles
 
-See [QUICK_REFERENCE.md](documents/QUICK_REFERENCE.md) for usage examples.
+### Desarrollo
+```bash
+npm run dev              # Solo frontend
+npm run server           # Solo backend
+npm run dev:full         # Frontend + Backend
+```
 
-## 🪝 Custom Hooks
+### Producción
+```bash
+npm run build               # Build de producción
+npm run start:production    # Servidor en producción
+npm run preview            # Preview del build
+```
 
-- **useLocalStorage** - Persist state in browser storage
+### Utilidades
+```bash
+npm run seed:superadmin     # Crear usuario admin
+```
 
-## 🛠️ Utilities
+## 🔐 Variables de Entorno
 
-- **formatDate** - Format dates for display
-- **debounce** - Limit function execution rate
-- **generateId** - Create unique identifiers
-- **Constants** - App-wide configuration
+### Desarrollo (.env)
+```bash
+MONGODB_URI=mongodb://localhost:27017/alcel-marine-dev
+PORT=5000
+NODE_ENV=development
+JWT_SECRET=tu-secret-key
+JWT_REFRESH_SECRET=tu-refresh-secret
+SESSION_SECRET=tu-session-secret
+```
 
-## 🎨 Design System
+Ver [DEPLOYMENT.md](./DEPLOYMENT.md) para configuración en producción.
 
-- **Dark Mode First** - Elegant dark theme
-- **Glassmorphism** - Modern glass effects
-- **Smooth Animations** - Transitions and hover effects
-- **Responsive** - Mobile-first design
-- **Accessible** - Semantic HTML and ARIA labels
+## 🔒 Seguridad
 
-## 📱 Responsive Breakpoints
+- ✅ Autenticación JWT con refresh tokens
+- ✅ 2FA opcional para usuarios
+- ✅ Rate limiting en API endpoints
+- ✅ Helmet.js para headers HTTP seguros
+- ✅ Passwords hasheados con bcrypt
+- ✅ Variables de entorno encriptadas en producción
 
-- `sm:` 640px - Small tablets
-- `md:` 768px - Tablets
-- `lg:` 1024px - Laptops
-- `xl:` 1280px - Desktops
+## 🐛 Troubleshooting
 
-## 🔧 Configuration Files
+### Puerto en uso
+```bash
+# Windows
+netstat -ano | findstr :5000
+taskkill /PID [PID] /F
+```
 
-- `tailwind.config.js` - Tailwind CSS configuration
-- `vite.config.js` - Vite build configuration
-- `postcss.config.js` - PostCSS configuration
-- `package.json` - Dependencies and scripts
+### Error de MongoDB
+- Verifica que MongoDB esté corriendo
+- Verifica `MONGODB_URI` en `.env`
 
-## 💡 Development Best Practices
+### Build falla
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
 
-1. ✅ Keep features modular and isolated
-2. ✅ Reuse existing UI components
-3. ✅ Use Tailwind utility classes
-4. ✅ Document your code with JSDoc
-5. ✅ Test features independently
-6. ✅ Follow existing patterns
+Ver más en [DEPLOYMENT.md](./DEPLOYMENT.md#troubleshooting)
 
-## 🚀 Recommended Next Steps
+## 💡 Mejores Prácticas
 
-- 🔀 Add React Router for navigation
-- 🔄 Implement Context API for state management
-- 🌐 Create API service layer
-- 📝 Add form validation
-- ✨ Integrate animations (Framer Motion)
-- 🎯 Add icon library (react-icons)
+1. ✅ Prueba localmente antes de hacer push
+2. ✅ Usa commits descriptivos (`feat:`, `fix:`, `refactor:`)
+3. ✅ Revisa los logs después de cada deployment
+4. ✅ Mantén las dependencias actualizadas
+5. ✅ No commitees archivos `.env`
+6. ✅ Documenta cambios importantes
 
-## 📝 License
+## 📈 Roadmap
 
-Private Project - Alcel Marine © 2025
+- [ ] Tests unitarios y de integración
+- [ ] CI/CD con GitHub Actions
+- [ ] Logs centralizados
+- [ ] Monitoring avanzado
+- [ ] Notificaciones push
+- [ ] App móvil (React Native)
+
+## 👥 Contribuir
+
+1. Crea una rama: `git checkout -b feature/nueva-funcionalidad`
+2. Haz commit: `git commit -m 'feat: añadir nueva funcionalidad'`
+3. Push: `git push origin feature/nueva-funcionalidad`
+4. Crea un Pull Request
+
+## 📝 Licencia
+
+Proyecto privado y confidencial - Alcel Marine © 2024
 
 ---
 
-**Built with ❤️ using React + Tailwind CSS**
+## 📞 Soporte
 
-For questions or issues, check the documentation files or create an issue.
+- Revisa [WORKFLOW.md](./WORKFLOW.md) para flujo de trabajo diario
+- Consulta [DEPLOYMENT.md](./DEPLOYMENT.md) para deployment
+- Sigue [DIGITAL-OCEAN-SETUP.md](./DIGITAL-OCEAN-SETUP.md) para configuración
+
+---
+
+**Desarrollado con ❤️ para Alcel Marine**
 
