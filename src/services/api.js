@@ -185,8 +185,8 @@ export const jobsAPI = {
   // Get single job
   getById: (id) => apiCall(`/jobs/${id}`),
 
-  // Generate next job number
-  generateNumber: () => apiCall('/jobs/generate-number'),
+  // Generate next job number (optionally for specific year)
+  generateNumber: (year) => apiCall(`/jobs/generate-number${year ? `?year=${year}` : ''}`),
 
   // Get job history
   getHistory: (jobId) => apiCall(`/jobs/${jobId}/history`),
@@ -303,8 +303,8 @@ export const claimsAPI = {
   // Get single claim
   getById: (id) => apiCall(`/claims/${id}`),
 
-  // Generate next claim number (shares same sequence with jobs)
-  generateNumber: () => apiCall('/claims/generate-number'),
+  // Generate next claim number (shares same sequence with jobs, optionally for specific year)
+  generateNumber: (year) => apiCall(`/claims/generate-number${year ? `?year=${year}` : ''}`),
 
   // Get claim history
   getHistory: (claimId) => apiCall(`/claims/${claimId}/history`),

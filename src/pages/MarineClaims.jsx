@@ -31,6 +31,9 @@ export default function MarineClaims() {
     netProfit: 0
   })
 
+  // Year selector for job number generation
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString().slice(-2))
+
   // Claims list
   const [claims, setClaims] = useState([])
   const [editingClaim, setEditingClaim] = useState(null)
@@ -291,7 +294,7 @@ export default function MarineClaims() {
   // Generate next job number (shared with jobs)
   const generateJobNumber = async () => {
     try {
-      const response = await claimsAPI.generateNumber()
+      const response = await claimsAPI.generateNumber(selectedYear)
       if (response.success) {
         setFormData(prev => ({
           ...prev,
@@ -300,6 +303,7 @@ export default function MarineClaims() {
       }
     } catch (error) {
       console.error('Error generating job number:', error)
+      toast.error('Error generating job number')
     }
   }
 
@@ -481,14 +485,31 @@ export default function MarineClaims() {
                   <span className="text-cyan-400 ml-1">*</span>
                 </label>
                 {!editingClaim && (
-                  <button
-                    type="button"
-                    onClick={generateJobNumber}
-                    className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors duration-200 flex items-center gap-1"
-                  >
-                    <RotateCw className="w-3.5 h-3.5" />
-                    Generate
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      className="text-xs px-2 py-1 bg-slate-800/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-cyan-400/50 transition-all duration-200"
+                    >
+                      {/* Generate years from 2020 to 10 years in the future */}
+                      {Array.from({ length: 30 }, (_, i) => {
+                        const year = (2020 + i).toString().slice(-2)
+                        return (
+                          <option key={year} value={year}>
+                            20{year}
+                          </option>
+                        )
+                      })}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={generateJobNumber}
+                      className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors duration-200 flex items-center gap-1"
+                    >
+                      <RotateCw className="w-3.5 h-3.5" />
+                      Generate
+                    </button>
+                  </div>
                 )}
               </div>
               <input
@@ -499,13 +520,13 @@ export default function MarineClaims() {
                 placeholder="Auto-generated (e.g., ALCEL-25-001)"
                 readOnly={!editingClaim}
                 required
-                className={`w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-white placeholder-gray-500 
-                  focus:outline-none focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20 
+                className={`w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-white placeholder-gray-500
+                  focus:outline-none focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20
                   transition-all duration-300 backdrop-blur-xl hover:border-white/20 font-mono font-semibold text-cyan-400
                   ${!editingClaim ? 'cursor-not-allowed opacity-80' : ''}`}
               />
               {!editingClaim && (
-                <p className="text-xs text-gray-500 italic">Auto-generated when you enter claim name</p>
+                <p className="text-xs text-gray-500 italic">Select year and click Generate, or auto-generated when you enter claim name</p>
               )}
             </div>
 

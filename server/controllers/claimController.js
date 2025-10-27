@@ -10,35 +10,61 @@ import ClaimHistory from '../models/ClaimHistory.js'
 const generateClaimNumber = async (req, res) => {
   try {
     const { default: Job } = await import('../models/Job.js')
-    
-    // Get the latest job or claim number from both collections
-    const latestJob = await Job.findOne().sort({ createdAt: -1 }).limit(1)
-    const latestClaim = await Claim.findOne().sort({ createdAt: -1 }).limit(1)
-    
+
+    // Get year from query param or use current year
+    const requestedYear = req.query.year
+      ? req.query.year.toString().padStart(2, '0')
+      : new Date().getFullYear().toString().slice(-2)
+
+    // Validate year format (should be 2 digits)
+    if (!/^\d{2}$/.test(requestedYear)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Year must be a 2-digit number (e.g., 23, 24, 25)'
+      })
+    }
+
+    // Create regex to match job numbers for the specific year
+    const yearPattern = new RegExp(`^ALCEL-${requestedYear}-(\\d{3})$`)
+
+    // Find all jobs and claims for this specific year
+    const jobsForYear = await Job.find({
+      jobNumber: { $regex: `^ALCEL-${requestedYear}-` }
+    }).sort({ jobNumber: -1 }).limit(1)
+
+    const claimsForYear = await Claim.find({
+      jobNumber: { $regex: `^ALCEL-${requestedYear}-` }
+    }).sort({ jobNumber: -1 }).limit(1)
+
     let nextNumber = 1
-    const currentYear = new Date().getFullYear().toString().slice(-2)
-    
-    // Extract number from latest job
-    if (latestJob && latestJob.jobNumber) {
-      const jobMatch = latestJob.jobNumber.match(/ALCEL-\d{2}-(\d{3})/)
+
+    // Extract number from latest job for this year
+    if (jobsForYear.length > 0 && jobsForYear[0].jobNumber) {
+      const jobMatch = jobsForYear[0].jobNumber.match(yearPattern)
       if (jobMatch) {
         nextNumber = Math.max(nextNumber, parseInt(jobMatch[1], 10) + 1)
       }
     }
-    
-    // Extract number from latest claim
-    if (latestClaim && latestClaim.jobNumber) {
-      const claimMatch = latestClaim.jobNumber.match(/ALCEL-\d{2}-(\d{3})/)
+
+    // Extract number from latest claim for this year
+    if (claimsForYear.length > 0 && claimsForYear[0].jobNumber) {
+      const claimMatch = claimsForYear[0].jobNumber.match(yearPattern)
       if (claimMatch) {
         nextNumber = Math.max(nextNumber, parseInt(claimMatch[1], 10) + 1)
       }
     }
-    
-    const jobNumber = `ALCEL-${currentYear}-${String(nextNumber).padStart(3, '0')}`
-    
+
+    // Format with leading zeros (3 digits)
+    const formattedNumber = nextNumber.toString().padStart(3, '0')
+    const jobNumber = `ALCEL-${requestedYear}-${formattedNumber}`
+
     res.status(200).json({
       success: true,
-      data: { jobNumber }
+      data: {
+        jobNumber,
+        nextNumber,
+        year: requestedYear
+      }
     })
   } catch (error) {
     console.error('Error generating claim number:', error)
