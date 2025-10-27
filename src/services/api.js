@@ -3,7 +3,9 @@
  * Handles all backend API communications
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+// In production, use relative path. In development, use localhost
+const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:5000/api')
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -18,7 +20,10 @@ const refreshAccessToken = async () => {
     throw new Error('No refresh token available')
   }
 
-  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`, {
+  const refreshApiUrl = import.meta.env.VITE_API_URL ||
+    (import.meta.env.MODE === 'production' ? '' : 'http://localhost:5000')
+
+  const response = await fetch(`${refreshApiUrl}/api/auth/refresh`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

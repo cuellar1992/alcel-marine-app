@@ -36,7 +36,11 @@ import { apiLimiter } from './middleware/rateLimiter.js'
 const app = express()
 
 // Middleware
-app.use(helmet()) // Security headers
+// Configure Helmet with relaxed CSP for production
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP in production to avoid blocking same-origin requests
+  crossOriginEmbedderPolicy: false,
+}))
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
