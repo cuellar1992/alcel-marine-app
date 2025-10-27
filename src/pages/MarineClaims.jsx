@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import { Container, Card, Input, Select, Button, Modal, DatePicker, DateTimePicker, Table, ConfirmDialog, Pagination, SearchBar, TimeSheet } from '../components/ui'
 import { claimsAPI, clientsAPI } from '../services'
 import { useConfirm, useCacheInvalidation } from '../hooks'
-import { exportClaimsToExcel } from '../utils'
+import { exportClaimsToExcel, sortByJobNumber } from '../utils' // sortByJobNumber still used for export
 import { Pencil, Trash2, RotateCw, Clock, Edit3, Trash, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Settings, Info } from 'lucide-react'
 import TimeSheetFullScreenModal from '../components/TimeSheetFullScreenModal'
 
@@ -89,7 +89,8 @@ export default function MarineClaims() {
   // Load claims from API with pagination and search
   const loadClaims = async () => {
     try {
-      const response = await claimsAPI.getAll(currentPage, itemsPerPage, searchDebounce, advancedFilters)
+      const sortByParam = sortOrder ? 'jobNumber' : null
+      const response = await claimsAPI.getAll(currentPage, itemsPerPage, searchDebounce, advancedFilters, sortByParam, sortOrder)
       if (response.success) {
         setClaims(response.data)
         setPagination(response.pagination)
@@ -109,10 +110,10 @@ export default function MarineClaims() {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  // Reload claims when pagination or search changes
+  // Reload claims when pagination, search, or sort changes
   useEffect(() => {
     loadClaims()
-  }, [currentPage, itemsPerPage, searchDebounce, advancedFilters])
+  }, [currentPage, itemsPerPage, searchDebounce, advancedFilters, sortOrder])
 
   // Calculate net profit automatically
   useEffect(() => {
@@ -147,36 +148,35 @@ export default function MarineClaims() {
     }
   }
 
-  // Sort claims by job number
-  const sortedClaims = [...claims].sort((a, b) => {
-    if (sortOrder === 'asc') {
-      return a.jobNumber.localeCompare(b.jobNumber)
-    }
-    if (sortOrder === 'desc') {
-      return b.jobNumber.localeCompare(a.jobNumber)
-    }
-    return 0 // No sorting if sortOrder is null
-  })
-
   // Excel Export Handler
   const handleExportToExcel = async () => {
-    if (claims.length === 0) {
-      toast.error('No claims to export')
-      return
-    }
-
     try {
-      const loadingToast = toast.loading('Generating Excel file...')
+      const loadingToast = toast.loading('Fetching all claims for export...')
 
-      await exportClaimsToExcel(claims, 'Alcel_Marine_Claims')
+      // Fetch ALL claims with current filters (using a very large limit)
+      const response = await claimsAPI.getAll(1, 999999, searchDebounce, advancedFilters)
+
+      if (!response.success || response.data.length === 0) {
+        toast.dismiss(loadingToast)
+        toast.error('No claims to export')
+        return
+      }
+
+      // Sort claims intelligently by year (desc) and sequence (asc)
+      const allClaims = sortByJobNumber(response.data, 'desc')
 
       toast.dismiss(loadingToast)
+      const exportingToast = toast.loading('Generating Excel file...')
+
+      await exportClaimsToExcel(allClaims, 'Alcel_Marine_Claims')
+
+      toast.dismiss(exportingToast)
 
       const filterMessage = hasActiveFilters || searchTerm
         ? ' (filtered results)'
         : ''
 
-      toast.success(`Successfully exported ${claims.length} claim${claims.length === 1 ? '' : 's'} to Excel!${filterMessage}`)
+      toast.success(`Successfully exported ${allClaims.length} claim${allClaims.length === 1 ? '' : 's'} to Excel!${filterMessage}`)
     } catch (error) {
       toast.error('Failed to export to Excel')
       console.error('Export error:', error)
@@ -900,7 +900,7 @@ export default function MarineClaims() {
               }
             },
           ]}
-          data={sortedClaims}
+          data={claims}
           onView={handleViewClaim}
           onEdit={handleEditClaim}
           onDelete={handleDeleteClaim}

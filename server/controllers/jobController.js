@@ -88,10 +88,12 @@ export const getAllJobs = async (req, res) => {
     const skip = (page - 1) * limit
     const search = req.query.search || ''
     const searchField = req.query.searchField || 'all'
+    const sortBy = req.query.sortBy || 'dateTime' // 'dateTime' or 'jobNumber'
+    const sortOrder = req.query.sortOrder || 'desc' // 'asc' or 'desc'
 
     // Build search query
     let query = {}
-    
+
     // Text search with field selector
     if (search) {
       if (searchField === 'all') {
@@ -141,25 +143,80 @@ export const getAllJobs = async (req, res) => {
 
     // Get total count with filters
     const total = await Job.countDocuments(query)
-    
-    // Get paginated jobs with filters
-    const jobs = await Job.find(query)
-      .sort({ dateTime: -1 })
-      .skip(skip)
-      .limit(limit)
-    
-    res.json({
-      success: true,
-      data: jobs,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        totalItems: total,
-        itemsPerPage: limit,
-        hasNextPage: page < Math.ceil(total / limit),
-        hasPrevPage: page > 1
-      }
-    })
+
+    // Determine sort criteria
+    if (sortBy === 'jobNumber') {
+      // For jobNumber sorting, we need to sort intelligently by year and sequence
+      // We'll fetch all matching records, sort in memory, then paginate
+      const allJobs = await Job.find(query)
+
+      // Sort intelligently by job number (year then sequence)
+      allJobs.sort((a, b) => {
+        const parseJobNumber = (jobNum) => {
+          if (!jobNum) return { year: 0, sequence: 0 }
+          const parts = jobNum.split('-')
+          if (parts.length < 3) return { year: 0, sequence: 0 }
+          return {
+            year: parseInt(parts[1], 10) || 0,
+            sequence: parseInt(parts[2], 10) || 0
+          }
+        }
+
+        const parsedA = parseJobNumber(a.jobNumber)
+        const parsedB = parseJobNumber(b.jobNumber)
+
+        // Compare by year
+        if (parsedA.year !== parsedB.year) {
+          return sortOrder === 'asc'
+            ? parsedA.year - parsedB.year
+            : parsedB.year - parsedA.year
+        }
+
+        // If same year, compare by sequence respecting sortOrder
+        return sortOrder === 'asc'
+          ? parsedA.sequence - parsedB.sequence
+          : parsedB.sequence - parsedA.sequence
+      })
+
+      // Apply pagination manually
+      const jobs = allJobs.slice(skip, skip + limit)
+
+      res.json({
+        success: true,
+        data: jobs,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalItems: total,
+          itemsPerPage: limit,
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1
+        }
+      })
+    } else {
+      // Default sorting by dateTime or other fields
+      const sortCriteria = {}
+      sortCriteria[sortBy] = sortOrder === 'asc' ? 1 : -1
+
+      // Get paginated jobs with filters
+      const jobs = await Job.find(query)
+        .sort(sortCriteria)
+        .skip(skip)
+        .limit(limit)
+
+      res.json({
+        success: true,
+        data: jobs,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalItems: total,
+          itemsPerPage: limit,
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1
+        }
+      })
+    }
   } catch (error) {
     res.status(500).json({
       success: false,

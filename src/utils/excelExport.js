@@ -13,23 +13,9 @@ import { saveAs } from 'file-saver'
  */
 export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') => {
   try {
-    // Sort jobs by Job Number in ascending order (001, 002, 003... 100)
-    const sortedJobs = [...jobs].sort((a, b) => {
-      // Extract numeric part from job numbers (e.g., "002" from "ALCEL-25-002")
-      const getNumericPart = (jobNumber) => {
-        if (!jobNumber) return 0
-        // Extract the LAST number sequence (handles formats like ALCEL-25-002)
-        const matches = jobNumber.match(/\d+/g)
-        if (!matches || matches.length === 0) return 0
-        // Return the last number found (the sequential number)
-        return parseInt(matches[matches.length - 1], 10)
-      }
-      
-      const numA = getNumericPart(a.jobNumber)
-      const numB = getNumericPart(b.jobNumber)
-      
-      return numA - numB
-    })
+    // Note: Jobs are expected to be pre-sorted by the caller
+    // No sorting is done here to preserve the order passed in
+    const sortedJobs = jobs
     
     // Create a new workbook
     const workbook = new ExcelJS.Workbook()
@@ -379,23 +365,9 @@ const formatInvoiceStatus = (status) => {
  */
 export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claims') => {
   try {
-    // Sort claims by Job Number in ascending order (001, 002, 003... 100)
-    const sortedClaims = [...claims].sort((a, b) => {
-      // Extract numeric part from job numbers (e.g., "002" from "ALCEL-25-002")
-      const getNumericPart = (jobNumber) => {
-        if (!jobNumber) return 0
-        // Extract the LAST number sequence (handles formats like ALCEL-25-002)
-        const matches = jobNumber.match(/\d+/g)
-        if (!matches || matches.length === 0) return 0
-        // Return the last number found (the sequential number)
-        return parseInt(matches[matches.length - 1], 10)
-      }
-      
-      const numA = getNumericPart(a.jobNumber)
-      const numB = getNumericPart(b.jobNumber)
-      
-      return numA - numB
-    })
+    // Note: Claims are expected to be pre-sorted by the caller
+    // No sorting is done here to preserve the order passed in
+    const sortedClaims = claims
     
     // Create a new workbook
     const workbook = new ExcelJS.Workbook()

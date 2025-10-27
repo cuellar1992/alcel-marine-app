@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import { Container, Card, Input, Select, Textarea, Button, Modal, DateTimePicker, Table, ConfirmDialog, Pagination, SearchBar, AdvancedFilters } from '../components/ui'
 import { jobsAPI, jobTypesAPI, portsAPI, clientsAPI } from '../services'
 import { useConfirm, useCacheInvalidation } from '../hooks'
-import { exportJobsToExcel } from '../utils'
+import { exportJobsToExcel, sortByJobNumber } from '../utils'
 import { Pencil, Trash2, Plus, RotateCw, Settings, Clock, Edit3, Trash, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Info } from 'lucide-react'
 
 export default function MarineNonClaims() {
@@ -122,7 +122,8 @@ export default function MarineNonClaims() {
   // Load jobs from API with pagination, search, and advanced filters
   const loadJobs = async () => {
     try {
-      const response = await jobsAPI.getAll(currentPage, itemsPerPage, searchDebounce, advancedFilters)
+      const sortByParam = sortOrder ? 'jobNumber' : null
+      const response = await jobsAPI.getAll(currentPage, itemsPerPage, searchDebounce, advancedFilters, sortByParam, sortOrder)
       if (response.success) {
         setJobs(response.data)
         setPagination(response.pagination)
@@ -142,10 +143,10 @@ export default function MarineNonClaims() {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  // Reload jobs when pagination, search, or filters change
+  // Reload jobs when pagination, search, filters, or sort change
   useEffect(() => {
     loadJobs()
-  }, [currentPage, itemsPerPage, searchDebounce, advancedFilters])
+  }, [currentPage, itemsPerPage, searchDebounce, advancedFilters, sortOrder])
 
   // Calculate net profit automatically
   useEffect(() => {
@@ -231,38 +232,37 @@ export default function MarineNonClaims() {
     }
   }
 
-  // Sort jobs by job number
-  const sortedJobs = [...jobs].sort((a, b) => {
-    if (sortOrder === 'asc') {
-      return a.jobNumber.localeCompare(b.jobNumber)
-    }
-    if (sortOrder === 'desc') {
-      return b.jobNumber.localeCompare(a.jobNumber)
-    }
-    return 0 // No sorting if sortOrder is null
-  })
-
   // Excel Export Handler
   const handleExportToExcel = async () => {
-    if (jobs.length === 0) {
-      toast.error('No jobs to export')
-      return
-    }
-
     try {
-      const loadingToast = toast.loading('Generating Excel file...')
-      
-      // Export current filtered/searched jobs (what user sees)
-      await exportJobsToExcel(jobs, 'Alcel_Marine_Jobs')
-      
+      const loadingToast = toast.loading('Fetching all jobs for export...')
+
+      // Fetch ALL jobs with current filters (using a very large limit)
+      const response = await jobsAPI.getAll(1, 999999, searchDebounce, advancedFilters)
+
+      if (!response.success || response.data.length === 0) {
+        toast.dismiss(loadingToast)
+        toast.error('No jobs to export')
+        return
+      }
+
+      // Sort jobs intelligently by year (desc) and sequence (asc)
+      const allJobs = sortByJobNumber(response.data, 'desc')
+
       toast.dismiss(loadingToast)
-      
+      const exportingToast = toast.loading('Generating Excel file...')
+
+      // Export ALL filtered/searched jobs
+      await exportJobsToExcel(allJobs, 'Alcel_Marine_Jobs')
+
+      toast.dismiss(exportingToast)
+
       // Show message based on filters/search
-      const filterMessage = hasActiveFilters || searchTerm 
+      const filterMessage = hasActiveFilters || searchTerm
         ? ' (filtered results)'
         : ''
-      
-      toast.success(`Successfully exported ${jobs.length} job${jobs.length === 1 ? '' : 's'} to Excel!${filterMessage}`)
+
+      toast.success(`Successfully exported ${allJobs.length} job${allJobs.length === 1 ? '' : 's'} to Excel!${filterMessage}`)
     } catch (error) {
       toast.error('Failed to export to Excel')
       console.error('Export error:', error)
@@ -1341,7 +1341,7 @@ export default function MarineNonClaims() {
               }
             },
           ]}
-          data={sortedJobs}
+          data={jobs}
           onView={handleViewJob}
           onEdit={handleEditJob}
           onDelete={handleDeleteJob}

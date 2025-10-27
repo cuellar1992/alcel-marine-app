@@ -111,13 +111,15 @@ const getAllClaims = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10
     const search = req.query.search || ''
     const skip = (page - 1) * limit
+    const sortBy = req.query.sortBy || 'createdAt' // 'createdAt' or 'jobNumber'
+    const sortOrder = req.query.sortOrder || 'desc' // 'asc' or 'desc'
 
     // Build search query
     let query = {}
 
     if (search) {
       const searchField = req.query.searchField || 'all'
-      
+
       if (searchField === 'all') {
         query.$or = [
           { jobNumber: { $regex: search, $options: 'i' } },
@@ -150,24 +152,79 @@ const getAllClaims = async (req, res) => {
 
     const totalItems = await Claim.countDocuments(query)
     const totalPages = Math.ceil(totalItems / limit)
-    
-    const claims = await Claim.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
 
-    res.status(200).json({
-      success: true,
-      data: claims,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalItems,
-        itemsPerPage: limit,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
-      }
-    })
+    // Determine sort criteria
+    let sortCriteria = {}
+    if (sortBy === 'jobNumber') {
+      // For jobNumber sorting, we need to sort intelligently by year and sequence
+      // We'll fetch all matching records, sort in memory, then paginate
+      const allClaims = await Claim.find(query)
+
+      // Sort intelligently by job number (year then sequence)
+      allClaims.sort((a, b) => {
+        const parseJobNumber = (jobNum) => {
+          if (!jobNum) return { year: 0, sequence: 0 }
+          const parts = jobNum.split('-')
+          if (parts.length < 3) return { year: 0, sequence: 0 }
+          return {
+            year: parseInt(parts[1], 10) || 0,
+            sequence: parseInt(parts[2], 10) || 0
+          }
+        }
+
+        const parsedA = parseJobNumber(a.jobNumber)
+        const parsedB = parseJobNumber(b.jobNumber)
+
+        // Compare by year
+        if (parsedA.year !== parsedB.year) {
+          return sortOrder === 'asc'
+            ? parsedA.year - parsedB.year
+            : parsedB.year - parsedA.year
+        }
+
+        // If same year, compare by sequence respecting sortOrder
+        return sortOrder === 'asc'
+          ? parsedA.sequence - parsedB.sequence
+          : parsedB.sequence - parsedA.sequence
+      })
+
+      // Apply pagination manually
+      const claims = allClaims.slice(skip, skip + limit)
+
+      res.status(200).json({
+        success: true,
+        data: claims,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems,
+          itemsPerPage: limit,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      })
+    } else {
+      // Default sorting by createdAt
+      sortCriteria[sortBy] = sortOrder === 'asc' ? 1 : -1
+
+      const claims = await Claim.find(query)
+        .sort(sortCriteria)
+        .skip(skip)
+        .limit(limit)
+
+      res.status(200).json({
+        success: true,
+        data: claims,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems,
+          itemsPerPage: limit,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      })
+    }
   } catch (error) {
     console.error('Error fetching claims:', error)
     res.status(500).json({

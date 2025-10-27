@@ -138,11 +138,19 @@ const apiCall = async (endpoint, options = {}) => {
 // Jobs API
 export const jobsAPI = {
   // Get all jobs with pagination, search, and advanced filters
-  getAll: (page = 1, limit = 10, search = '', filters = {}) => {
+  getAll: (page = 1, limit = 10, search = '', filters = {}, sortBy = null, sortOrder = null) => {
     let url = `/jobs?page=${page}&limit=${limit}`
-    
+
     if (search) {
       url += `&search=${encodeURIComponent(search)}`
+    }
+
+    // Add sorting parameters
+    if (sortBy) {
+      url += `&sortBy=${sortBy}`
+    }
+    if (sortOrder) {
+      url += `&sortOrder=${sortOrder}`
     }
 
     // Add advanced filters
@@ -166,19 +174,19 @@ export const jobsAPI = {
     }
     if (filters.dateFrom) {
       // Convert Date object to YYYY-MM-DD format
-      const dateFrom = filters.dateFrom instanceof Date 
+      const dateFrom = filters.dateFrom instanceof Date
         ? filters.dateFrom.toISOString().split('T')[0]
         : filters.dateFrom
       url += `&dateFrom=${dateFrom}`
     }
     if (filters.dateTo) {
       // Convert Date object to YYYY-MM-DD format
-      const dateTo = filters.dateTo instanceof Date 
+      const dateTo = filters.dateTo instanceof Date
         ? filters.dateTo.toISOString().split('T')[0]
         : filters.dateTo
       url += `&dateTo=${dateTo}`
     }
-    
+
     return apiCall(url)
   },
 
@@ -267,11 +275,19 @@ export const clientsAPI = {
 // Claims API
 export const claimsAPI = {
   // Get all claims with pagination, search, and advanced filters
-  getAll: (page = 1, limit = 10, search = '', filters = {}) => {
+  getAll: (page = 1, limit = 10, search = '', filters = {}, sortBy = null, sortOrder = null) => {
     let url = `/claims?page=${page}&limit=${limit}`
-    
+
     if (search) {
       url += `&search=${encodeURIComponent(search)}`
+    }
+
+    // Add sorting parameters
+    if (sortBy) {
+      url += `&sortBy=${sortBy}`
+    }
+    if (sortOrder) {
+      url += `&sortOrder=${sortOrder}`
     }
 
     // Add advanced filters
@@ -285,18 +301,18 @@ export const claimsAPI = {
       url += `&invoiceIssue=${filters.invoiceIssue}`
     }
     if (filters.dateFrom) {
-      const dateFrom = filters.dateFrom instanceof Date 
+      const dateFrom = filters.dateFrom instanceof Date
         ? filters.dateFrom.toISOString().split('T')[0]
         : filters.dateFrom
       url += `&dateFrom=${dateFrom}`
     }
     if (filters.dateTo) {
-      const dateTo = filters.dateTo instanceof Date 
+      const dateTo = filters.dateTo instanceof Date
         ? filters.dateTo.toISOString().split('T')[0]
         : filters.dateTo
       url += `&dateTo=${dateTo}`
     }
-    
+
     return apiCall(url)
   },
 
