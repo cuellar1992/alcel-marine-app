@@ -19,6 +19,7 @@ export default function MarineClaims() {
   const [formData, setFormData] = useState({
     jobNumber: '',
     clientName: '',
+    subcontractName: '',
     registrationDate: null,
     clientRef: '',
     claimName: '',
@@ -327,6 +328,7 @@ export default function MarineClaims() {
       setFormData({
         jobNumber: '',
         clientName: '',
+        subcontractName: '',
         registrationDate: null,
         clientRef: '',
         claimName: '',
@@ -374,6 +376,7 @@ export default function MarineClaims() {
     setFormData({
       jobNumber: claim.jobNumber,
       clientName: claim.clientName || '',
+      subcontractName: claim.subcontractName || '',
       registrationDate: new Date(claim.registrationDate),
       clientRef: claim.clientRef,
       claimName: claim.claimName,
@@ -416,6 +419,7 @@ export default function MarineClaims() {
     setFormData({
       jobNumber: '',
       clientName: '',
+      subcontractName: '',
       registrationDate: null,
       clientRef: '',
       claimName: '',
@@ -592,6 +596,16 @@ export default function MarineClaims() {
               required={false}
             />
 
+            {/* Subcontract Name */}
+            <Input
+              label="Subcontract Name"
+              name="subcontractName"
+              value={formData.subcontractName}
+              onChange={handleChange}
+              placeholder="Enter subcontract name"
+              required={false}
+            />
+
             {/* Invoice Issue */}
             <Select
               label="Invoice Issue"
@@ -676,13 +690,14 @@ export default function MarineClaims() {
 
           {/* Submit Buttons */}
           <div className="flex gap-4 justify-end mt-8">
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="secondary"
               onClick={() => {
                 setFormData({
                   jobNumber: '',
                   clientName: '',
+                  subcontractName: '',
                   registrationDate: null,
                   clientRef: '',
                   claimName: '',
@@ -908,6 +923,13 @@ export default function MarineClaims() {
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Location</p>
                 <p className="text-base text-gray-300">{viewingClaim.location}</p>
               </div>
+
+              {viewingClaim.subcontractName && (
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Subcontract Name</p>
+                  <p className="text-base text-gray-300">{viewingClaim.subcontractName}</p>
+                </div>
+              )}
 
               {viewingClaim.siteInspectionDateTime && (
                 <div>

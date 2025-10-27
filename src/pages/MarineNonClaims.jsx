@@ -24,6 +24,7 @@ export default function MarineNonClaims() {
     port: '',
     jobType: '',
     clientName: '',
+    subcontractName: '',
     invoiceIssue: '',
     invoiceAmount: 0,
     subcontractAmount: 0,
@@ -357,6 +358,7 @@ export default function MarineNonClaims() {
         port: '',
         jobType: '',
         clientName: '',
+        subcontractName: '',
         invoiceIssue: '',
         invoiceAmount: 0,
         subcontractAmount: 0,
@@ -407,6 +409,7 @@ export default function MarineNonClaims() {
       port: job.port,
       jobType: job.jobType,
       clientName: job.clientName,
+      subcontractName: job.subcontractName || '',
       invoiceIssue: job.invoiceIssue,
       invoiceAmount: job.invoiceAmount || 0,
       subcontractAmount: job.subcontractAmount || 0,
@@ -453,6 +456,7 @@ export default function MarineNonClaims() {
       port: '',
       jobType: '',
       clientName: '',
+      subcontractName: '',
       invoiceIssue: '',
       invoiceAmount: 0,
       subcontractAmount: 0,
@@ -961,16 +965,16 @@ export default function MarineNonClaims() {
                 value={formData.clientName}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-white 
-                  focus:outline-none focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20 
+                className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-white
+                  focus:outline-none focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20
                   transition-all duration-300 backdrop-blur-xl hover:border-white/20 cursor-pointer"
               >
                 <option value="" disabled className="bg-slate-800">
                   Select client
                 </option>
                 {clients.map((client) => (
-                  <option 
-                    key={client._id} 
+                  <option
+                    key={client._id}
                     value={client.name}
                     className="bg-slate-800"
                   >
@@ -979,6 +983,16 @@ export default function MarineNonClaims() {
                 ))}
               </select>
             </div>
+
+            {/* Subcontract Name */}
+            <Input
+              label="Subcontract Name"
+              name="subcontractName"
+              value={formData.subcontractName}
+              onChange={handleChange}
+              placeholder="Enter subcontract name"
+              required={false}
+            />
 
             {/* Invoice Issue */}
             <Select
@@ -1087,8 +1101,8 @@ export default function MarineNonClaims() {
 
           {/* Submit Buttons */}
           <div className="flex gap-4 justify-end mt-8">
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="secondary"
               onClick={() => {
                 setEtdError('')
@@ -1101,6 +1115,7 @@ export default function MarineNonClaims() {
                   port: '',
                   jobType: '',
                   clientName: '',
+                  subcontractName: '',
                   invoiceIssue: '',
                   invoiceAmount: 0,
                   subcontractAmount: 0,
@@ -1395,6 +1410,13 @@ export default function MarineNonClaims() {
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Client Name</p>
                 <p className="text-base text-gray-300">{viewingJob.clientName}</p>
               </div>
+
+              {viewingJob.subcontractName && (
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Subcontract Name</p>
+                  <p className="text-base text-gray-300">{viewingJob.subcontractName}</p>
+                </div>
+              )}
 
               <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Status</p>

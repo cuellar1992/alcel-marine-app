@@ -17,6 +17,11 @@ const claimSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  subcontractName: {
+    type: String,
+    required: false,
+    trim: true
+  },
   registrationDate: {
     type: Date,
     required: true

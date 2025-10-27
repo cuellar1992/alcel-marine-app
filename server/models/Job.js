@@ -44,6 +44,11 @@ const jobSchema = new mongoose.Schema({
     required: [true, 'Client name is required'],
     trim: true
   },
+  subcontractName: {
+    type: String,
+    required: false,
+    trim: true
+  },
   invoiceIssue: {
     type: String,
     required: [true, 'Invoice status is required'],

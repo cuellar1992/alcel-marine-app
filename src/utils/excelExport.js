@@ -70,6 +70,7 @@ export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') =>
       { header: 'Port', key: 'port', width: 18 },
       { header: 'Job Type', key: 'jobType', width: 20 },
       { header: 'Client', key: 'clientName', width: 25 },
+      { header: 'Subcontract Name', key: 'subcontractName', width: 25 },
       { header: 'Status', key: 'status', width: 15 },
       { header: 'Invoice Status', key: 'invoiceIssue', width: 15 }
     ]
@@ -120,36 +121,37 @@ export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') =>
       const rowData = {
         jobNumber: job.jobNumber,
         vesselName: job.vesselName,
-        dateTime: `${dateTime.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: '2-digit', 
-          year: 'numeric' 
-        })} ${dateTime.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
+        dateTime: `${dateTime.toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit',
+          year: 'numeric'
+        })} ${dateTime.toLocaleTimeString('en-US', {
+          hour: '2-digit',
           minute: '2-digit',
           hour12: false
         })}`,
-        etb: etb ? `${etb.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: '2-digit', 
-          year: 'numeric' 
-        })} ${etb.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
+        etb: etb ? `${etb.toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit',
+          year: 'numeric'
+        })} ${etb.toLocaleTimeString('en-US', {
+          hour: '2-digit',
           minute: '2-digit',
           hour12: false
         })}` : '',
-        etd: etd ? `${etd.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: '2-digit', 
-          year: 'numeric' 
-        })} ${etd.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
+        etd: etd ? `${etd.toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit',
+          year: 'numeric'
+        })} ${etd.toLocaleTimeString('en-US', {
+          hour: '2-digit',
           minute: '2-digit',
           hour12: false
         })}` : '',
         port: job.port,
         jobType: formatJobType(job.jobType),
         clientName: job.clientName,
+        subcontractName: job.subcontractName || '',
         status: formatStatus(job.status),
         invoiceIssue: formatInvoiceStatus(job.invoiceIssue)
       }
@@ -174,7 +176,7 @@ export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') =>
 
       // Alternate row colors for better readability
       const isEven = index % 2 === 0
-      const remarkColIndex = hasFinancialData ? 14 : 11 // Column index for remarks
+      const remarkColIndex = hasFinancialData ? 15 : 12 // Column index for remarks
       
       row.eachCell((cell, colNumber) => {
         cell.fill = {
@@ -259,6 +261,7 @@ export const exportJobsToExcel = async (jobs, filename = 'Alcel_Marine_Jobs') =>
       port: '',
       jobType: '',
       clientName: '',
+      subcontractName: '',
       status: '',
       invoiceIssue: ''
     }
@@ -431,6 +434,7 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
       { header: 'Registration Date', key: 'registrationDate', width: 20 },
       { header: 'Client Ref', key: 'clientRef', width: 20 },
       { header: 'Location', key: 'location', width: 25 },
+      { header: 'Subcontract Name', key: 'subcontractName', width: 25 },
       { header: 'Site Inspection', key: 'siteInspection', width: 22 },
       { header: 'Invoice Status', key: 'invoiceIssue', width: 15 }
     ]
@@ -484,6 +488,7 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
         }),
         clientRef: claim.clientRef,
         location: claim.location,
+        subcontractName: claim.subcontractName || '',
         siteInspection: siteInspection ? `${siteInspection.toLocaleDateString('en-US', {
           month: 'short',
           day: '2-digit',
@@ -574,6 +579,7 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
       registrationDate: '',
       clientRef: '',
       location: '',
+      subcontractName: '',
       siteInspection: '',
       invoiceIssue: ''
     }
@@ -647,6 +653,7 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
       registrationDate: '',
       clientRef: '',
       location: '',
+      subcontractName: '',
       siteInspection: '',
       invoiceIssue: `Generated on ${new Date().toLocaleString('en-US')}`
     })
