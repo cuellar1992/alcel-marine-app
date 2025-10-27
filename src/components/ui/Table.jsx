@@ -24,7 +24,7 @@ export default function Table({ columns, data, onView, onEdit, onDelete, classNa
             {columns.map((column) => (
               <th
                 key={column.key}
-                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                className={`px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider ${column.className || ''}`}
               >
                 {column.label}
               </th>
@@ -45,7 +45,7 @@ export default function Table({ columns, data, onView, onEdit, onDelete, classNa
               {columns.map((column) => (
                 <td
                   key={column.key}
-                  className="px-6 py-4 text-sm text-gray-300"
+                  className={`px-6 py-4 text-sm text-gray-300 ${column.className || ''}`}
                 >
                   {column.render ? column.render(row[column.key], row) : row[column.key]}
                 </td>

@@ -9,7 +9,7 @@ import { Container, Card, Input, Select, Button, Modal, DatePicker, DateTimePick
 import { claimsAPI, clientsAPI } from '../services'
 import { useConfirm, useCacheInvalidation } from '../hooks'
 import { exportClaimsToExcel } from '../utils'
-import { Pencil, Trash2, RotateCw, Clock, Edit3, Trash, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Settings } from 'lucide-react'
+import { Pencil, Trash2, RotateCw, Clock, Edit3, Trash, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Settings, Info } from 'lucide-react'
 import TimeSheetFullScreenModal from '../components/TimeSheetFullScreenModal'
 
 export default function MarineClaims() {
@@ -76,6 +76,9 @@ export default function MarineClaims() {
   const [editingClientId, setEditingClientId] = useState(null)
 
   const [loading, setLoading] = useState(false)
+
+  // Tooltip for Job Number info
+  const [showJobNumberTooltip, setShowJobNumberTooltip] = useState(false)
 
   // Load claims and clients on mount
   useEffect(() => {
@@ -480,10 +483,31 @@ export default function MarineClaims() {
             {/* Job Number - Auto-generated */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-gray-300">
-                  Job Number
-                  <span className="text-cyan-400 ml-1">*</span>
-                </label>
+                <div className="flex items-center gap-1.5">
+                  <label className="block text-sm font-medium text-gray-300">
+                    Job Number
+                    <span className="text-cyan-400 ml-1">*</span>
+                  </label>
+                  {!editingClaim && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onMouseEnter={() => setShowJobNumberTooltip(true)}
+                        onMouseLeave={() => setShowJobNumberTooltip(false)}
+                        onClick={() => setShowJobNumberTooltip(!showJobNumberTooltip)}
+                        className="text-cyan-400 hover:text-cyan-300 transition-colors duration-200"
+                      >
+                        <Info className="w-4 h-4" />
+                      </button>
+                      {showJobNumberTooltip && (
+                        <div className="absolute left-0 top-6 z-50 w-64 px-3 py-2 text-xs text-white bg-slate-800 border border-cyan-400/30 rounded-lg shadow-lg shadow-cyan-500/20">
+                          <p className="leading-relaxed">Select year and click Generate, or auto-generated when you enter claim name</p>
+                          <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-800 border-l border-t border-cyan-400/30 transform rotate-45"></div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {!editingClaim && (
                   <div className="flex items-center gap-2">
                     <select
@@ -525,9 +549,6 @@ export default function MarineClaims() {
                   transition-all duration-300 backdrop-blur-xl hover:border-white/20 font-mono font-semibold text-cyan-400
                   ${!editingClaim ? 'cursor-not-allowed opacity-80' : ''}`}
               />
-              {!editingClaim && (
-                <p className="text-xs text-gray-500 italic">Select year and click Generate, or auto-generated when you enter claim name</p>
-              )}
             </div>
 
             {/* Client Name */}
@@ -795,8 +816,9 @@ export default function MarineClaims() {
 
         <Table
           columns={[
-            { 
-              key: 'jobNumber', 
+            {
+              key: 'jobNumber',
+              className: 'whitespace-nowrap',
               label: (
                 <button
                   onClick={handleSortByJobNumber}
@@ -815,7 +837,7 @@ export default function MarineClaims() {
                 </button>
               ),
               render: (value) => (
-                <span className="font-mono font-semibold text-cyan-400">{value}</span>
+                <span className="font-mono font-semibold text-cyan-400 whitespace-nowrap">{value}</span>
               )
             },
             {

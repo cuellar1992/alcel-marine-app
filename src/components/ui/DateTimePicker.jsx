@@ -1,20 +1,21 @@
 /**
  * DateTimePicker Component
- * Modern date and time picker using react-day-picker
+ * Modern date and time picker with animated multi-view calendar
  * Solución definitiva con portal y posicionamiento correcto
  */
 
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { DayPicker } from 'react-day-picker'
 import { format } from 'date-fns'
-import 'react-day-picker/dist/style.css'
+import AnimatedCalendar from './AnimatedCalendar'
 
 export default function DateTimePicker({
   label,
   selected,
   onChange,
   required = false,
+  minDate,
+  maxDate,
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedTime, setSelectedTime] = useState('00:00')
@@ -117,11 +118,11 @@ export default function DateTimePicker({
       }}
     >
       <div className="datetime-picker-container">
-        <DayPicker
-          mode="single"
+        <AnimatedCalendar
           selected={selected}
           onSelect={handleDaySelect}
-          className="day-picker-custom"
+          minDate={minDate}
+          maxDate={maxDate}
         />
 
         <div className="time-picker-section">

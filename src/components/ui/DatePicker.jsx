@@ -1,15 +1,14 @@
 /**
  * DatePicker Component
- * Modern date picker (date only, no time) using react-day-picker
+ * Modern date picker (date only, no time) with animated multi-view calendar
  * Con botón "Today" y diseño consistente con DateTimePicker
  */
 
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { DayPicker } from 'react-day-picker'
 import { format } from 'date-fns'
 import { Calendar } from 'lucide-react'
-import 'react-day-picker/dist/style.css'
+import AnimatedCalendar from './AnimatedCalendar'
 
 export default function DatePicker({
   label,
@@ -17,6 +16,8 @@ export default function DatePicker({
   onChange,
   required = false,
   showTodayButton = false,
+  minDate,
+  maxDate,
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
@@ -92,11 +93,11 @@ export default function DatePicker({
       }}
     >
       <div className="datetime-picker-container">
-        <DayPicker
-          mode="single"
+        <AnimatedCalendar
           selected={selected}
           onSelect={handleDaySelect}
-          className="day-picker-custom"
+          minDate={minDate}
+          maxDate={maxDate}
         />
       </div>
     </div>,
