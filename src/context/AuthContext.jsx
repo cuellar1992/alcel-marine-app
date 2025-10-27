@@ -2,11 +2,26 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getDeviceFingerprint } from '../utils/deviceFingerprint';
-import { 
-  validateStoredTokens, 
-  clearAuthData, 
-  isTokenExpired 
+import {
+  validateStoredTokens,
+  clearAuthData,
+  isTokenExpired
 } from '../utils/tokenUtils';
+
+// API Base URL - use relative path in production, localhost in development
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // In production build, use relative path (same origin)
+  if (import.meta.env.PROD) {
+    return '';
+  }
+  // In development, use localhost
+  return 'http://localhost:5000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const AuthContext = createContext(null);
 
@@ -84,7 +99,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const deviceId = getDeviceFingerprint();
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +148,7 @@ export const AuthProvider = ({ children }) => {
   // Register
   const register = async (name, email, password) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,7 +184,7 @@ export const AuthProvider = ({ children }) => {
       // Llamar al endpoint de logout (opcional)
       const token = localStorage.getItem('accessToken');
       if (token) {
-        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/logout`, {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -198,7 +213,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('No refresh token available');
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

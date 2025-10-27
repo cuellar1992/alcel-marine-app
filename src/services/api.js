@@ -3,9 +3,20 @@
  * Handles all backend API communications
  */
 
-// In production, use relative path. In development, use localhost
-const API_BASE_URL = import.meta.env.VITE_API_URL ||
-  (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:5000/api')
+// API Base URL - use relative path in production, localhost in development
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // In production build, use relative path (same origin)
+  if (import.meta.env.PROD) {
+    return '/api';
+  }
+  // In development, use localhost
+  return 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -21,7 +32,7 @@ const refreshAccessToken = async () => {
   }
 
   const refreshApiUrl = import.meta.env.VITE_API_URL ||
-    (import.meta.env.MODE === 'production' ? '' : 'http://localhost:5000')
+    (import.meta.env.PROD ? '' : 'http://localhost:5000')
 
   const response = await fetch(`${refreshApiUrl}/api/auth/refresh`, {
     method: 'POST',
