@@ -46,6 +46,10 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+// If behind proxy/load balancer (e.g., Nginx, Heroku), trust X-Forwarded-For
+// This ensures rate limiting by real client IP
+app.set('trust proxy', 1)
+
 // Apply rate limiting to all API routes
 app.use('/api/', apiLimiter)
 

@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 // Rate limiter general para la API
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Máximo 100 requests por ventana por IP
+  max: 500, // Ajustado: máximo 500 requests por ventana por IP
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
