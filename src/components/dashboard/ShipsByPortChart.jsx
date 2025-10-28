@@ -76,8 +76,8 @@ export default function ShipsByPortChart({ data, loading = false }) {
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '15%',
-      top: '10%',
+      bottom: '10%',
+      top: '5%',
       containLabel: true
     },
     xAxis: {
@@ -188,7 +188,7 @@ export default function ShipsByPortChart({ data, loading = false }) {
         <div className="relative">
           <ReactECharts
             option={option}
-            style={{ height: '340px' }}
+            style={{ height: '380px' }}
             opts={{ renderer: 'svg' }}
           />
         </div>
