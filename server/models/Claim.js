@@ -62,6 +62,11 @@ const claimSchema = new mongoose.Schema({
   netProfit: {
     type: Number,
     default: 0
+  },
+  remark: {
+    type: String,
+    required: false,
+    trim: true
   }
 }, {
   timestamps: true

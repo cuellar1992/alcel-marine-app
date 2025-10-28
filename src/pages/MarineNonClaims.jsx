@@ -766,7 +766,6 @@ export default function MarineNonClaims() {
             Marine Non-Claims Services
           </h1>
         </div>
-        <p className="text-gray-400 text-lg">Create and manage ballast water and bunker survey jobs</p>
       </div>
 
       {/* Form Card */}
@@ -871,9 +870,9 @@ export default function MarineNonClaims() {
               required
             />
 
-            {/* Date & Time */}
+            {/* Inspection Date & Time */}
             <DateTimePicker
-              label="Date & Time"
+              label="Inspection Date & Time"
               selected={formData.dateTime}
               onChange={(date) => setFormData({ ...formData, dateTime: date })}
               required
@@ -1276,9 +1275,9 @@ export default function MarineNonClaims() {
                 <span className="font-semibold text-white">{value}</span>
               )
             },
-            { 
-              key: 'dateTime', 
-              label: 'Date & Time',
+            {
+              key: 'dateTime',
+              label: 'Inspection Date & Time',
               render: (value) => (
                 <div className="text-sm">
                   <div className="text-gray-300 font-medium">
@@ -1383,7 +1382,7 @@ export default function MarineNonClaims() {
               </div>
 
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Date & Time</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Inspection Date & Time</p>
                 <p className="text-base text-gray-300">
                   {new Date(viewingJob.dateTime).toLocaleDateString('en-US', {
                     month: 'long',

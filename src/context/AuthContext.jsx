@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
             
             if (newAccessToken && storedUser) {
               setUser(JSON.parse(storedUser));
-              toast.success('Sesión renovada automáticamente', { duration: 2000 });
+              toast.success('Session renewed automatically', { duration: 2000 });
             } else {
               clearAuthData();
             }

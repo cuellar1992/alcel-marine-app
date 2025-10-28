@@ -420,6 +420,9 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
       )
     }
 
+    // Add remark column at the end
+    columns.push({ header: 'Remark', key: 'remark', width: 35 })
+
     worksheet.columns = columns
 
     // Style the header row (Row 1)
@@ -486,12 +489,16 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
         }
       }
 
+      // Add remark
+      rowData.remark = claim.remark || ''
+
       const row = worksheet.addRow(rowData)
 
       // Alternate row colors for better readability
       const isEven = index % 2 === 0
-      
-      row.eachCell((cell) => {
+      const remarkColIndex = hasFinancialData ? 13 : 10 // Column index for remarks
+
+      row.eachCell((cell, colNumber) => {
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -504,7 +511,8 @@ export const exportClaimsToExcel = async (claims, filename = 'Alcel_Marine_Claim
         }
         cell.alignment = {
           vertical: 'middle',
-          horizontal: 'left'
+          horizontal: 'left',
+          wrapText: colNumber === remarkColIndex // Wrap text for remarks column
         }
       })
 

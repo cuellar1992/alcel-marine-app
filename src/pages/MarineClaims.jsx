@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { Container, Card, Input, Select, Button, Modal, DatePicker, DateTimePicker, Table, ConfirmDialog, Pagination, SearchBar, TimeSheet } from '../components/ui'
+import { Container, Card, Input, Select, Textarea, Button, Modal, DatePicker, DateTimePicker, Table, ConfirmDialog, Pagination, SearchBar, TimeSheet } from '../components/ui'
 import { claimsAPI, clientsAPI } from '../services'
 import { useConfirm, useCacheInvalidation } from '../hooks'
 import { exportClaimsToExcel, sortByJobNumber } from '../utils' // sortByJobNumber still used for export
@@ -28,7 +28,8 @@ export default function MarineClaims() {
     invoiceIssue: '',
     invoiceAmount: 0,
     subcontractAmount: 0,
-    netProfit: 0
+    netProfit: 0,
+    remark: ''
   })
 
   // Year selector for job number generation
@@ -344,7 +345,8 @@ export default function MarineClaims() {
         invoiceIssue: '',
         invoiceAmount: 0,
         subcontractAmount: 0,
-        netProfit: 0
+        netProfit: 0,
+        remark: ''
       })
       await loadClaims()
       
@@ -392,7 +394,8 @@ export default function MarineClaims() {
       invoiceIssue: claim.invoiceIssue,
       invoiceAmount: claim.invoiceAmount || 0,
       subcontractAmount: claim.subcontractAmount || 0,
-      netProfit: claim.netProfit || 0
+      netProfit: claim.netProfit || 0,
+      remark: claim.remark || ''
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
     toast('Editing claim - modify the form above')
@@ -435,7 +438,8 @@ export default function MarineClaims() {
       invoiceIssue: '',
       invoiceAmount: 0,
       subcontractAmount: 0,
-      netProfit: 0
+      netProfit: 0,
+      remark: ''
     })
     toast.info('Edit cancelled')
   }
@@ -456,7 +460,6 @@ export default function MarineClaims() {
               Marine Claims & Inspections
             </h1>
         </div>
-        <p className="text-gray-400 text-lg">Create and manage marine cargo claims and inspections</p>
           </div>
           
       {/* Form Card */}
@@ -730,6 +733,18 @@ export default function MarineClaims() {
             )}
           </div>
 
+          {/* Remark - Full Width */}
+          <div className="mt-6">
+            <Textarea
+              label="Remark"
+              name="remark"
+              value={formData.remark}
+              onChange={handleChange}
+              placeholder="Add any additional notes or remarks..."
+              rows={4}
+            />
+          </div>
+
           {/* Submit Buttons */}
           <div className="flex gap-4 justify-end mt-8">
             <Button
@@ -748,7 +763,8 @@ export default function MarineClaims() {
                   invoiceIssue: '',
                   invoiceAmount: 0,
                   subcontractAmount: 0,
-                  netProfit: 0
+                  netProfit: 0,
+                  remark: ''
                 })
               }}
             >
@@ -1063,6 +1079,16 @@ export default function MarineClaims() {
                       <span className="text-sm text-emerald-300 ml-2">AUD</span>
                     </p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Remark - Full Width */}
+            {viewingClaim.remark && (
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Remark</p>
+                <div className="bg-slate-800/50 rounded-xl p-4 border border-white/10">
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{viewingClaim.remark}</p>
                 </div>
               </div>
             )}
