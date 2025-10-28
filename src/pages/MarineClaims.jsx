@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Container, Card, Input, Select, Textarea, Button, Modal, DatePicker, DateTimePicker, Table, ConfirmDialog, Pagination, SearchBar, TimeSheet } from '../components/ui'
-import { claimsAPI, clientsAPI } from '../services'
+import { claimsAPI, clientsAPI, subcontractorsAPI } from '../services'
 import { useConfirm, useCacheInvalidation } from '../hooks'
 import { exportClaimsToExcel, sortByJobNumber } from '../utils' // sortByJobNumber still used for export
 import { Pencil, Trash2, RotateCw, Clock, Edit3, Trash, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Settings, Info } from 'lucide-react'
@@ -76,6 +76,13 @@ export default function MarineClaims() {
   const [editingClientIndex, setEditingClientIndex] = useState(null)
   const [editingClientId, setEditingClientId] = useState(null)
 
+  // Subcontractors Management
+  const [subcontractors, setSubcontractors] = useState([])
+  const [isSubcontractorModalOpen, setIsSubcontractorModalOpen] = useState(false)
+  const [newSubcontractor, setNewSubcontractor] = useState('')
+  const [editingSubcontractorIndex, setEditingSubcontractorIndex] = useState(null)
+  const [editingSubcontractorId, setEditingSubcontractorId] = useState(null)
+
   const [loading, setLoading] = useState(false)
 
   // Tooltip for Job Number info
@@ -84,6 +91,7 @@ export default function MarineClaims() {
   // Load claims and clients on mount
   useEffect(() => {
     loadClients()
+    loadSubcontractors()
     loadClaims()
   }, [])
 
@@ -197,6 +205,19 @@ export default function MarineClaims() {
     }
   }
 
+  // Load subcontractors from API
+  const loadSubcontractors = async () => {
+    try {
+      const response = await subcontractorsAPI.getAll()
+      if (response.success) {
+        setSubcontractors(response.data)
+      }
+    } catch (error) {
+      console.error('Error loading subcontractors:', error)
+      setSubcontractors([])
+    }
+  }
+
   // Client modal handlers
   const openClientModal = () => {
     setIsClientModalOpen(true)
@@ -210,6 +231,21 @@ export default function MarineClaims() {
     setNewClient('')
     setEditingClientIndex(null)
     setEditingClientId(null)
+  }
+
+  // Subcontractor modal handlers
+  const openSubcontractorModal = () => {
+    setIsSubcontractorModalOpen(true)
+    setNewSubcontractor('')
+    setEditingSubcontractorIndex(null)
+    setEditingSubcontractorId(null)
+  }
+
+  const closeSubcontractorModal = () => {
+    setIsSubcontractorModalOpen(false)
+    setNewSubcontractor('')
+    setEditingSubcontractorIndex(null)
+    setEditingSubcontractorId(null)
   }
 
   // Client Management Functions
@@ -275,6 +311,76 @@ export default function MarineClaims() {
           }
         } catch (error) {
           toast.error(error.message || 'Failed to delete client')
+        } finally {
+          setLoading(false)
+        }
+      }
+    })
+  }
+
+  // Subcontractor Management Functions
+  const handleAddSubcontractor = async () => {
+    if (newSubcontractor.trim()) {
+      setLoading(true)
+      try {
+        const response = await subcontractorsAPI.create({ name: newSubcontractor.trim() })
+        
+        if (response.success) {
+          await loadSubcontractors()
+          setNewSubcontractor('')
+          toast.success('Subcontractor added successfully!')
+        }
+      } catch (error) {
+        toast.error(error.message || 'Failed to add subcontractor')
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  const handleEditSubcontractor = (index, id) => {
+    setEditingSubcontractorIndex(index)
+    setEditingSubcontractorId(id)
+    setNewSubcontractor(subcontractors[index].name)
+  }
+
+  const handleUpdateSubcontractor = async () => {
+    if (editingSubcontractorId && newSubcontractor.trim()) {
+      setLoading(true)
+      try {
+        const response = await subcontractorsAPI.update(editingSubcontractorId, { name: newSubcontractor.trim() })
+        
+        if (response.success) {
+          await loadSubcontractors()
+          setNewSubcontractor('')
+          setEditingSubcontractorIndex(null)
+          setEditingSubcontractorId(null)
+          toast.success('Subcontractor updated successfully!')
+        }
+      } catch (error) {
+        toast.error(error.message || 'Failed to update subcontractor')
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  const handleDeleteSubcontractor = (id) => {
+    confirmDialog.confirm({
+      title: 'Delete Subcontractor',
+      message: 'Are you sure you want to delete this subcontractor? This action cannot be undone.',
+      type: 'danger',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          const response = await subcontractorsAPI.delete(id)
+          
+          if (response.success) {
+            await loadSubcontractors()
+            toast.success('Subcontractor deleted successfully!')
+          }
+        } catch (error) {
+          toast.error(error.message || 'Failed to delete subcontractor')
         } finally {
           setLoading(false)
         }
@@ -641,15 +747,43 @@ export default function MarineClaims() {
               required={false}
             />
 
-            {/* Subcontract Name */}
-            <Input
-              label="Subcontract Name"
-              name="subcontractName"
-              value={formData.subcontractName}
-              onChange={handleChange}
-              placeholder="Enter subcontract name"
-              required={false}
-            />
+            {/* Subcontractor Name */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-300">
+                  Subcontractor Name
+                </label>
+                <button
+                  type="button"
+                  onClick={openSubcontractorModal}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors duration-200 flex items-center gap-1"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  Manage Sub
+                </button>
+              </div>
+              <select
+                name="subcontractName"
+                value={formData.subcontractName}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-white 
+                  focus:outline-none focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20 
+                  transition-all duration-300 backdrop-blur-xl hover:border-white/20 cursor-pointer"
+              >
+                <option value="" className="bg-slate-800">
+                  Select subcontractor (optional)
+                </option>
+                {subcontractors.map((subcontractor) => (
+                  <option 
+                    key={subcontractor._id} 
+                    value={subcontractor.name}
+                    className="bg-slate-800"
+                  >
+                    {subcontractor.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Invoice Issue */}
             <Select
@@ -985,7 +1119,7 @@ export default function MarineClaims() {
 
               {viewingClaim.subcontractName && (
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Subcontract Name</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Subcontractor Name</p>
                   <p className="text-base text-gray-300">{viewingClaim.subcontractName}</p>
                 </div>
               )}
@@ -1336,6 +1470,125 @@ export default function MarineClaims() {
                       </button>
                       <button
                         onClick={() => handleDeleteClient(client._id)}
+                        className="group/btn relative p-2 text-gray-400 hover:text-red-400 transition-all duration-300 overflow-hidden rounded-lg hover:bg-red-500/10"
+                        disabled={loading}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform duration-300" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Subcontractors Management Modal */}
+      <Modal
+        isOpen={isSubcontractorModalOpen}
+        onClose={closeSubcontractorModal}
+        title="Manage Subcontractors"
+        size="default"
+      >
+        <div className="space-y-8">
+          {/* Add/Edit Form */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+              <p className="text-xs uppercase tracking-widest text-cyan-400/60 font-light">
+                {editingSubcontractorIndex !== null ? 'Edit Subcontractor' : 'New Subcontractor'}
+              </p>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+            </div>
+
+            <Input
+              label="Subcontractor Name"
+              value={newSubcontractor}
+              onChange={(e) => setNewSubcontractor(e.target.value)}
+              placeholder="e.g., ABC Marine Services"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  if (editingSubcontractorIndex !== null) {
+                    handleUpdateSubcontractor()
+                  } else {
+                    handleAddSubcontractor()
+                  }
+                }
+              }}
+            />
+            
+            <div className="flex gap-3 pt-2">
+              {editingSubcontractorIndex !== null ? (
+                <>
+                  <Button 
+                    onClick={handleUpdateSubcontractor}
+                    variant="primary"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    Update
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setNewSubcontractor('')
+                      setEditingSubcontractorIndex(null)
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button 
+                  onClick={handleAddSubcontractor}
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Add Subcontractor
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Current Subcontractors List */}
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent"></div>
+              <p className="text-xs uppercase tracking-widest text-blue-400/60 font-light">
+                Current Subcontractors
+              </p>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent"></div>
+            </div>
+
+            <div className="space-y-2">
+              {subcontractors.map((subcontractor, index) => (
+                <div
+                  key={index}
+                  className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-r from-slate-800/30 to-slate-900/30 hover:from-slate-800/50 hover:to-slate-900/50 hover:border-cyan-500/30 transition-all duration-300"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-cyan-600/0 to-blue-600/0 group-hover:from-blue-600/5 group-hover:via-cyan-600/5 group-hover:to-blue-600/5 transition-all duration-500"></div>
+                  
+                  <div className="relative p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium tracking-wide">{subcontractor.name}</p>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditSubcontractor(index, subcontractor._id)}
+                        className="group/btn relative p-2 text-cyan-400 hover:text-cyan-300 transition-all duration-300 overflow-hidden rounded-lg hover:bg-cyan-500/10"
+                        disabled={loading}
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4 group-hover/btn:scale-110 transition-transform duration-300" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSubcontractor(subcontractor._id)}
                         className="group/btn relative p-2 text-gray-400 hover:text-red-400 transition-all duration-300 overflow-hidden rounded-lg hover:bg-red-500/10"
                         disabled={loading}
                         title="Delete"

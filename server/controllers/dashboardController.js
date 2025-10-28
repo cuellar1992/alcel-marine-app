@@ -11,13 +11,27 @@ import Claim from '../models/Claim.js'
 // @access  Public
 export const getDashboardStats = async (req, res) => {
   try {
-    // Get total jobs and claims
-    const totalJobs = await Job.countDocuments()
-    const totalClaims = await Claim.countDocuments()
+    // Get current year date range
+    const currentYear = new Date().getFullYear()
+    const startOfYear = new Date(currentYear, 0, 1) // January 1st
+    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999) // December 31st
+
+    // Get total jobs and claims for current year
+    const totalJobs = await Job.countDocuments({
+      dateTime: { $gte: startOfYear, $lte: endOfYear }
+    })
+    const totalClaims = await Claim.countDocuments({
+      registrationDate: { $gte: startOfYear, $lte: endOfYear }
+    })
     const totalRecords = totalJobs + totalClaims
 
-    // Get jobs by status
+    // Get jobs by status (current year only)
     const jobsByStatus = await Job.aggregate([
+      {
+        $match: {
+          dateTime: { $gte: startOfYear, $lte: endOfYear }
+        }
+      },
       {
         $group: {
           _id: '$status',
@@ -26,11 +40,19 @@ export const getDashboardStats = async (req, res) => {
       }
     ])
 
-    // Get pending jobs
-    const pendingJobs = await Job.countDocuments({ status: 'pending' })
+    // Get pending jobs (current year only)
+    const pendingJobs = await Job.countDocuments({
+      status: 'pending',
+      dateTime: { $gte: startOfYear, $lte: endOfYear }
+    })
 
-    // Calculate total invoice amount (from both jobs and claims)
+    // Calculate total invoice amount (from both jobs and claims - current year only)
     const jobsInvoiceAmount = await Job.aggregate([
+      {
+        $match: {
+          dateTime: { $gte: startOfYear, $lte: endOfYear }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -40,6 +62,11 @@ export const getDashboardStats = async (req, res) => {
     ])
 
     const claimsInvoiceAmount = await Claim.aggregate([
+      {
+        $match: {
+          registrationDate: { $gte: startOfYear, $lte: endOfYear }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -52,16 +79,27 @@ export const getDashboardStats = async (req, res) => {
       (jobsInvoiceAmount[0]?.total || 0) +
       (claimsInvoiceAmount[0]?.total || 0)
 
-    // Get invoice statistics
+    // Get invoice statistics (current year only)
     // Note: Models use 'not-issued', 'issued', 'paid' with hyphens
-    const issuedInvoices = await Job.countDocuments({ invoiceIssue: 'issued' }) + 
-                          await Claim.countDocuments({ invoiceIssue: 'issued' })
-    
-    const paidInvoices = await Job.countDocuments({ invoiceIssue: 'paid' }) + 
-                        await Claim.countDocuments({ invoiceIssue: 'paid' })
-    
-    // Count "not issued" - using 'not-issued' with hyphen as per model definition
-    const notIssuedInvoices = await Job.countDocuments({ 
+    const issuedInvoices = await Job.countDocuments({
+      invoiceIssue: 'issued',
+      dateTime: { $gte: startOfYear, $lte: endOfYear }
+    }) + await Claim.countDocuments({
+      invoiceIssue: 'issued',
+      registrationDate: { $gte: startOfYear, $lte: endOfYear }
+    })
+
+    const paidInvoices = await Job.countDocuments({
+      invoiceIssue: 'paid',
+      dateTime: { $gte: startOfYear, $lte: endOfYear }
+    }) + await Claim.countDocuments({
+      invoiceIssue: 'paid',
+      registrationDate: { $gte: startOfYear, $lte: endOfYear }
+    })
+
+    // Count "not issued" - using 'not-issued' with hyphen as per model definition (current year only)
+    const notIssuedInvoices = await Job.countDocuments({
+      dateTime: { $gte: startOfYear, $lte: endOfYear },
       $or: [
         { invoiceIssue: { $exists: false } },
         { invoiceIssue: null },
@@ -69,7 +107,8 @@ export const getDashboardStats = async (req, res) => {
         { invoiceIssue: 'not-issued' },  // With hyphen
         { invoiceIssue: 'not issued' }   // Without hyphen (legacy support)
       ]
-    }) + await Claim.countDocuments({ 
+    }) + await Claim.countDocuments({
+      registrationDate: { $gte: startOfYear, $lte: endOfYear },
       $or: [
         { invoiceIssue: { $exists: false } },
         { invoiceIssue: null },
@@ -107,7 +146,17 @@ export const getDashboardStats = async (req, res) => {
 // @access  Public
 export const getJobsByStatus = async (req, res) => {
   try {
+    // Get current month date range
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
     const jobsByStatus = await Job.aggregate([
+      {
+        $match: {
+          dateTime: { $gte: startOfMonth, $lte: endOfMonth }
+        }
+      },
       {
         $group: {
           _id: '$status',
@@ -246,26 +295,94 @@ export const getTopClients = async (req, res) => {
     const limit = parseInt(req.query.limit) || 5
     const sortBy = req.query.sortBy || 'revenue' // revenue or count
 
-    // Get jobs by client
+    // Get current month date range
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    // Get jobs by client (current month only) - Marine Non-Claims
     const jobsByClient = await Job.aggregate([
+      {
+        $match: {
+          dateTime: { $gte: startOfMonth, $lte: endOfMonth }
+        }
+      },
       {
         $group: {
           _id: '$clientName',
           count: { $sum: 1 },
           revenue: { $sum: { $toDouble: { $ifNull: ['$invoiceAmount', 0] } } }
         }
-      },
-      {
-        $sort: sortBy === 'revenue' ? { revenue: -1 } : { count: -1 }
-      },
-      {
-        $limit: limit
       }
     ])
 
+    // Get claims by client (current month only) - Marine Claims & Inspections
+    const claimsByClient = await Claim.aggregate([
+      {
+        $match: {
+          registrationDate: { $gte: startOfMonth, $lte: endOfMonth }
+        }
+      },
+      {
+        $group: {
+          _id: '$clientName',
+          count: { $sum: 1 },
+          revenue: { $sum: { $toDouble: { $ifNull: ['$invoiceAmount', 0] } } }
+        }
+      }
+    ])
+
+    // Combine jobs and claims data by client
+    const clientMap = new Map()
+
+    // Add jobs data
+    jobsByClient.forEach(item => {
+      clientMap.set(item._id, {
+        _id: item._id,
+        count: item.count,
+        revenue: item.revenue,
+        jobsCount: item.count,
+        jobsRevenue: item.revenue,
+        claimsCount: 0,
+        claimsRevenue: 0
+      })
+    })
+
+    // Add/merge claims data
+    claimsByClient.forEach(item => {
+      if (clientMap.has(item._id)) {
+        const existing = clientMap.get(item._id)
+        existing.count += item.count
+        existing.revenue += item.revenue
+        existing.claimsCount = item.count
+        existing.claimsRevenue = item.revenue
+      } else {
+        clientMap.set(item._id, {
+          _id: item._id,
+          count: item.count,
+          revenue: item.revenue,
+          jobsCount: 0,
+          jobsRevenue: 0,
+          claimsCount: item.count,
+          claimsRevenue: item.revenue
+        })
+      }
+    })
+
+    // Convert map to array and sort
+    const combinedData = Array.from(clientMap.values())
+      .sort((a, b) => {
+        if (sortBy === 'revenue') {
+          return b.revenue - a.revenue
+        } else {
+          return b.count - a.count
+        }
+      })
+      .slice(0, limit)
+
     res.json({
       success: true,
-      data: jobsByClient
+      data: combinedData
     })
   } catch (error) {
     res.status(500).json({
@@ -281,8 +398,18 @@ export const getTopClients = async (req, res) => {
 // @access  Public
 export const getJobsByType = async (req, res) => {
   try {
-    // Get jobs grouped by job type
+    // Get current month date range
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    // Get jobs grouped by job type (current month only)
     const jobsByType = await Job.aggregate([
+      {
+        $match: {
+          dateTime: { $gte: startOfMonth, $lte: endOfMonth }
+        }
+      },
       {
         $group: {
           _id: '$jobType',
@@ -291,8 +418,10 @@ export const getJobsByType = async (req, res) => {
       }
     ])
 
-    // Get total claims count
-    const claimsCount = await Claim.countDocuments()
+    // Get total claims count (current month only)
+    const claimsCount = await Claim.countDocuments({
+      registrationDate: { $gte: startOfMonth, $lte: endOfMonth }
+    })
 
     // Combine jobs by type with claims
     const allJobTypes = [
@@ -324,7 +453,17 @@ export const getJobsByType = async (req, res) => {
 // @access  Public
 export const getShipsByPort = async (req, res) => {
   try {
+    // Get current year date range
+    const currentYear = new Date().getFullYear()
+    const startOfYear = new Date(currentYear, 0, 1) // January 1st
+    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999) // December 31st
+
     const shipsByPort = await Job.aggregate([
+      {
+        $match: {
+          dateTime: { $gte: startOfYear, $lte: endOfYear }
+        }
+      },
       {
         $group: {
           _id: '$port',
@@ -403,8 +542,18 @@ export const getRecentActivity = async (req, res) => {
 // @access  Public
 export const getInvoiceOverview = async (req, res) => {
   try {
-    // Jobs invoice status
+    // Get current month date range
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    // Jobs invoice status (current month only)
     const jobsInvoiceStatus = await Job.aggregate([
+      {
+        $match: {
+          dateTime: { $gte: startOfMonth, $lte: endOfMonth }
+        }
+      },
       {
         $group: {
           _id: '$invoiceIssue',
@@ -414,8 +563,13 @@ export const getInvoiceOverview = async (req, res) => {
       }
     ])
 
-    // Claims invoice status
+    // Claims invoice status (current month only)
     const claimsInvoiceStatus = await Claim.aggregate([
+      {
+        $match: {
+          registrationDate: { $gte: startOfMonth, $lte: endOfMonth }
+        }
+      },
       {
         $group: {
           _id: '$invoiceIssue',
@@ -475,11 +629,11 @@ export const getInvoiceOverview = async (req, res) => {
 }
 
 // @desc    Get upcoming ETB/ETD schedule
-// @route   GET /api/dashboard/vessel-schedule?days=7
+// @route   GET /api/dashboard/vessel-schedule?days=14
 // @access  Public
 export const getVesselSchedule = async (req, res) => {
   try {
-    const days = parseInt(req.query.days) || 7
+    const days = parseInt(req.query.days) || 14
 
     const startDate = new Date()
     const endDate = new Date()

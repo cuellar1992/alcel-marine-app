@@ -3,5 +3,5 @@
  * Export all API services
  */
 
-export { jobsAPI, jobTypesAPI, portsAPI, clientsAPI, claimsAPI, timeSheetAPI, healthCheck } from './api'
+export { jobsAPI, jobTypesAPI, portsAPI, clientsAPI, subcontractorsAPI, claimsAPI, timeSheetAPI, healthCheck } from './api'
 

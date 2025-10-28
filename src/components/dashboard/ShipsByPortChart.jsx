@@ -191,10 +191,6 @@ export default function ShipsByPortChart({ data, loading = false }) {
             style={{ height: '340px' }}
             opts={{ renderer: 'svg' }}
           />
-          {/* Indicador de interactividad */}
-          <div className="absolute bottom-2 right-2 text-xs text-gray-500 opacity-60">
-            Hover for details
-          </div>
         </div>
       ) : (
         <div className="h-80 flex flex-col items-center justify-center text-gray-400">

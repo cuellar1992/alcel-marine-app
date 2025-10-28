@@ -9,7 +9,7 @@ export default function VesselSchedule({ data, loading = false }) {
   if (loading) {
     return (
       <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
-        <h3 className="text-lg font-semibold text-white mb-4">Vessel Schedule (Next 7 Days)</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">Vessel Schedule (Next 2 Weeks)</h3>
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="animate-pulse p-4 bg-gray-800/30 rounded-xl">
@@ -65,7 +65,7 @@ export default function VesselSchedule({ data, loading = false }) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-white">Vessel Schedule</h3>
         <span className="text-xs text-gray-400 px-3 py-1 bg-gray-700/30 rounded-full">
-          Next 7 Days
+          Next 2 Weeks
         </span>
       </div>
       

@@ -214,10 +214,6 @@ export default function RevenueTrendsChart({ data, loading = false }) {
               style={{ height: '340px' }}
               opts={{ renderer: 'svg' }}
             />
-            {/* Indicador de interactividad */}
-            <div className="absolute top-2 right-2 text-xs text-gray-500 opacity-60 bg-gray-800/50 px-2 py-1 rounded-full">
-              Hover for details
-            </div>
           </div>
           {!hasRevenue && (
             <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">

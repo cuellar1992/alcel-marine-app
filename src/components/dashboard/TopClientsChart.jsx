@@ -32,6 +32,10 @@ export default function TopClientsChart({ data, loading = false, sortBy = 'reven
       value: sortBy === 'revenue' ? item.revenue : item.count,
       revenue: item.revenue,
       count: item.count,
+      jobsCount: item.jobsCount || 0,
+      jobsRevenue: item.jobsRevenue || 0,
+      claimsCount: item.claimsCount || 0,
+      claimsRevenue: item.claimsRevenue || 0,
       itemStyle: {
         color: {
           type: 'linear',
@@ -74,9 +78,15 @@ export default function TopClientsChart({ data, loading = false, sortBy = 'reven
       formatter: function (params) {
         const item = chartData[params[0].dataIndex]
         return `
-          <div style="font-weight: bold; margin-bottom: 8px;">${item.name}</div>
-          <div style="color: #22C55E;">Revenue: <span style="font-weight: bold;">$${item.revenue.toLocaleString()}</span></div>
-          <div style="color: #3B82F6;">Jobs: <span style="font-weight: bold;">${item.count}</span></div>
+          <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">${item.name}</div>
+          <div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div style="color: #22C55E; margin-bottom: 2px;">Total Revenue: <span style="font-weight: bold;">$${item.revenue.toLocaleString()}</span></div>
+            <div style="color: #3B82F6;">Total Jobs: <span style="font-weight: bold;">${item.count}</span></div>
+          </div>
+          <div style="font-size: 12px; color: #9CA3AF; margin-top: 6px;">
+            <div style="margin-bottom: 2px;">• Marine Non-Claims: <span style="color: #60A5FA; font-weight: 600;">${item.jobsCount} jobs</span> | <span style="color: #34D399;">$${item.jobsRevenue.toLocaleString()}</span></div>
+            <div>• Marine Claims: <span style="color: #60A5FA; font-weight: 600;">${item.claimsCount} jobs</span> | <span style="color: #34D399;">$${item.claimsRevenue.toLocaleString()}</span></div>
+          </div>
         `
       }
     },
@@ -185,7 +195,7 @@ export default function TopClientsChart({ data, loading = false, sortBy = 'reven
           </svg>
         </div>
         <h3 className="text-lg font-semibold text-white">
-          Top Clients {sortBy === 'revenue' ? '(By Revenue)' : '(By Job Count)'}
+          Top Clients
         </h3>
         <div className="ml-auto text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
           Real-time
@@ -199,10 +209,6 @@ export default function TopClientsChart({ data, loading = false, sortBy = 'reven
             style={{ height: '340px' }}
             opts={{ renderer: 'svg' }}
           />
-          {/* Indicador de interactividad */}
-          <div className="absolute bottom-2 right-2 text-xs text-gray-500 opacity-60">
-            Hover for details
-          </div>
         </div>
       ) : (
         <div className="h-80 flex flex-col items-center justify-center text-gray-400">

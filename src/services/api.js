@@ -288,6 +288,22 @@ export const clientsAPI = {
   }),
 }
 
+// Subcontractors API
+export const subcontractorsAPI = {
+  getAll: () => apiCall('/subcontractors'),
+  create: (subcontractorData) => apiCall('/subcontractors', {
+    method: 'POST',
+    body: JSON.stringify(subcontractorData),
+  }),
+  update: (id, subcontractorData) => apiCall(`/subcontractors/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(subcontractorData),
+  }),
+  delete: (id) => apiCall(`/subcontractors/${id}`, {
+    method: 'DELETE',
+  }),
+}
+
 // Claims API
 export const claimsAPI = {
   // Get all claims with pagination, search, and advanced filters

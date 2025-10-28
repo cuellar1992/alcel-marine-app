@@ -21,6 +21,7 @@ import jobRoutes from './routes/jobRoutes.js'
 import jobTypeRoutes from './routes/jobTypeRoutes.js'
 import portRoutes from './routes/portRoutes.js'
 import clientRoutes from './routes/clientRoutes.js'
+import subcontractorRoutes from './routes/subcontractorRoutes.js'
 import jobHistoryRoutes from './routes/jobHistoryRoutes.js'
 import claimRoutes from './routes/claimRoutes.js'
 import timeSheetRoutes from './routes/timeSheetRoutes.js'
@@ -66,6 +67,7 @@ app.use('/api/jobs', jobRoutes)
 app.use('/api/job-types', jobTypeRoutes)
 app.use('/api/ports', portRoutes)
 app.use('/api/clients', clientRoutes)
+app.use('/api/subcontractors', subcontractorRoutes)
 app.use('/api/job-history', jobHistoryRoutes)
 app.use('/api/claims', claimRoutes)
 app.use('/api/timesheet', timeSheetRoutes)
