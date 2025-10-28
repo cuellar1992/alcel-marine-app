@@ -1043,7 +1043,7 @@ export default function MarineClaims() {
                   'paid': 'bg-green-500/20 text-green-400 border-green-500/30'
                 }
                 return (
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${colors[value] || ''}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border whitespace-nowrap ${colors[value] || ''}`}>
                     {value?.replace('-', ' ').toUpperCase()}
                   </span>
                 )

@@ -628,7 +628,7 @@ export const getInvoiceOverview = async (req, res) => {
   }
 }
 
-// @desc    Get upcoming ETB/ETD schedule
+// @desc    Get upcoming schedule by Inspection Date & Time (dateTime)
 // @route   GET /api/dashboard/vessel-schedule?days=14
 // @access  Public
 export const getVesselSchedule = async (req, res) => {
@@ -639,19 +639,44 @@ export const getVesselSchedule = async (req, res) => {
     const endDate = new Date()
     endDate.setDate(endDate.getDate() + days)
 
-    const schedule = await Job.find({
-      $or: [
-        { etb: { $gte: startDate, $lte: endDate } },
-        { etd: { $gte: startDate, $lte: endDate } }
-      ]
+    // Fetch Jobs within range
+    const jobs = await Job.find({
+      dateTime: { $gte: startDate, $lte: endDate }
     })
-      .sort({ etb: 1 })
-      .select('jobNumber vesselName port etb etd status jobType clientName')
+      .select('jobNumber vesselName port dateTime status jobType clientName')
       .lean()
+
+    // Fetch Claims within range (using registrationDate)
+    const claims = await Claim.find({
+      registrationDate: { $gte: startDate, $lte: endDate }
+    })
+      .select('jobNumber claimName location registrationDate clientName')
+      .lean()
+
+    // Normalize claims to job-like shape for frontend component
+    const normalizedClaims = claims.map(c => ({
+      _id: c._id,
+      jobNumber: c.jobNumber,
+      vesselName: c.claimName, // display claim name as title
+      port: c.location,
+      dateTime: c.registrationDate,
+      status: undefined,
+      jobType: 'Claims',
+      clientName: c.clientName,
+      type: 'claim'
+    }))
+
+    const normalizedJobs = jobs.map(j => ({
+      ...j,
+      type: 'job'
+    }))
+
+    const combined = [...normalizedJobs, ...normalizedClaims]
+      .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))
 
     res.json({
       success: true,
-      data: schedule
+      data: combined
     })
   } catch (error) {
     res.status(500).json({

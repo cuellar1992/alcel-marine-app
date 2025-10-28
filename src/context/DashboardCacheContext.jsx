@@ -60,7 +60,7 @@ export const DashboardCacheProvider = ({ children }) => {
         dashboardAPI.getShipsByPort(),
         dashboardAPI.getRecentActivity(10),
         dashboardAPI.getInvoiceOverview(),
-        dashboardAPI.getVesselSchedule(7),
+        dashboardAPI.getVesselSchedule(14),
         dashboardAPI.getJobsPerMonth(new Date().getFullYear())
       ]);
 

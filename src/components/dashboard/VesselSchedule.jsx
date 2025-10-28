@@ -3,7 +3,7 @@
  * Shows upcoming vessel arrivals and departures (ETB/ETD)
  */
 
-import { Ship, Calendar, MapPin, ArrowRight, Clock, Briefcase, User } from 'lucide-react'
+import { Ship, Calendar, MapPin, Briefcase, User } from 'lucide-react'
 
 export default function VesselSchedule({ data, loading = false }) {
   if (loading) {
@@ -29,8 +29,8 @@ export default function VesselSchedule({ data, loading = false }) {
     if (!dateString) return 'Not set'
     try {
       const date = new Date(dateString)
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
@@ -119,27 +119,14 @@ export default function VesselSchedule({ data, loading = false }) {
                 </div>
               )}
 
-              {/* ETB/ETD */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-13">
-                {vessel.etb && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="flex items-center gap-1.5 text-green-400">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-medium">ETB:</span>
-                    </div>
-                    <span className="text-gray-300">{formatDateTime(vessel.etb)}</span>
-                  </div>
-                )}
-                {vessel.etd && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="flex items-center gap-1.5 text-orange-400">
-                      <ArrowRight className="w-4 h-4" />
-                      <span className="font-medium">ETD:</span>
-                    </div>
-                    <span className="text-gray-300">{formatDateTime(vessel.etd)}</span>
-                  </div>
-                )}
-              </div>
+              {/* Inspection Date & Time */}
+              {vessel.dateTime && (
+                <div className="flex items-center gap-2 text-sm text-gray-300 pl-13 mb-1">
+                  <Calendar className="w-4 h-4 text-cyan-400" />
+                  <span className="text-gray-400">Inspection Date & Time:</span>
+                  <span>{formatDateTime(vessel.dateTime)}</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
