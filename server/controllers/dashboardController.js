@@ -151,12 +151,17 @@ export const getJobsByStatus = async (req, res) => {
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth()
-    
+
+    console.log(`🔍 [DEBUG getJobsByStatus] Current date: ${now.toISOString()}`)
+    console.log(`🔍 [DEBUG getJobsByStatus] Year: ${year}, Month: ${month}`)
+
     // Start of month in local timezone (first day, 00:00:00 local)
     const startOfMonth = new Date(year, month, 1, 0, 0, 0, 0)
-    
+
     // End of month in local timezone (last day, 23:59:59.999 local)
     const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
+
+    console.log(`🔍 [DEBUG getJobsByStatus] Date range: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`)
 
     const jobsByStatus = await Job.aggregate([
       {
@@ -186,7 +191,7 @@ export const getJobsByStatus = async (req, res) => {
     const totalJobsInMonth = await Job.countDocuments({
       dateTime: { $gte: startOfMonth, $lte: endOfMonth }
     })
-    
+
     const jobsWithoutStatus = await Job.countDocuments({
       dateTime: { $gte: startOfMonth, $lte: endOfMonth },
       $or: [
@@ -196,9 +201,11 @@ export const getJobsByStatus = async (req, res) => {
       ]
     })
 
-    console.log(`[Jobs By Status] Total jobs in month: ${totalJobsInMonth}, Jobs with status: ${totalJobsInMonth - jobsWithoutStatus}, Jobs without status: ${jobsWithoutStatus}`)
-    console.log(`[Jobs By Status] Date range: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`)
-    console.log(`[Jobs By Status] Status groups:`, jobsByStatus.map(s => `${s._id}: ${s.count}`).join(', '))
+    console.log(`🔍 [DEBUG getJobsByStatus] Total jobs in month: ${totalJobsInMonth}`)
+    console.log(`🔍 [DEBUG getJobsByStatus] Jobs with status: ${totalJobsInMonth - jobsWithoutStatus}`)
+    console.log(`🔍 [DEBUG getJobsByStatus] Jobs without status: ${jobsWithoutStatus}`)
+    console.log(`🔍 [DEBUG getJobsByStatus] Result groups:`, JSON.stringify(jobsByStatus))
+    console.log(`🔍 [DEBUG getJobsByStatus] Status breakdown:`, jobsByStatus.map(s => `${s._id}: ${s.count}`).join(', '))
 
     res.json({
       success: true,
