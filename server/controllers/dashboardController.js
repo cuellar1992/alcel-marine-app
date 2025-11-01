@@ -147,27 +147,44 @@ export const getDashboardStats = async (req, res) => {
 export const getJobsByStatus = async (req, res) => {
   try {
     // Get current month date range using Australia/Sydney timezone
-    // This ensures consistency for users in Sydney timezone
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = now.getMonth()
+    // Convert UTC time to Sydney time to get the correct month
+    const nowUTC = new Date()
+    const sydneyTimeString = nowUTC.toLocaleString('en-US', {
+      timeZone: 'Australia/Sydney',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
 
-    console.log(`🔍 [DEBUG getJobsByStatus] Current date: ${now.toISOString()}`)
-    console.log(`🔍 [DEBUG getJobsByStatus] Year: ${year}, Month: ${month}`)
+    // Parse the Sydney time to get year and month
+    const [datePart] = sydneyTimeString.split(', ')
+    const [month, day, year] = datePart.split('/')
+    const sydneyYear = parseInt(year)
+    const sydneyMonth = parseInt(month) - 1 // JavaScript months are 0-indexed
 
-    // Start of month in local timezone (first day, 00:00:00 local)
-    const startOfMonth = new Date(year, month, 1, 0, 0, 0, 0)
+    // Create start of month in Sydney timezone, then convert to UTC for MongoDB query
+    // Sydney is UTC+11 (or UTC+10 during DST), so we subtract 11 hours to get UTC equivalent
+    const startOfMonthSydney = new Date(Date.UTC(sydneyYear, sydneyMonth, 1, 0, 0, 0, 0))
+    const startOfMonth = new Date(startOfMonthSydney.getTime() - (11 * 60 * 60 * 1000))
 
-    // End of month in local timezone (last day, 23:59:59.999 local)
-    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
+    // End of month in Sydney timezone
+    const endOfMonthSydney = new Date(Date.UTC(sydneyYear, sydneyMonth + 1, 0, 23, 59, 59, 999))
+    const endOfMonth = new Date(endOfMonthSydney.getTime() - (11 * 60 * 60 * 1000))
 
-    console.log(`🔍 [DEBUG getJobsByStatus] Date range: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`)
+    console.log(`🔍 [DEBUG getJobsByStatus] Current UTC: ${nowUTC.toISOString()}`)
+    console.log(`🔍 [DEBUG getJobsByStatus] Sydney time: ${sydneyTimeString}`)
+    console.log(`🔍 [DEBUG getJobsByStatus] Sydney Year: ${sydneyYear}, Month: ${sydneyMonth}`)
+    console.log(`🔍 [DEBUG getJobsByStatus] Date range (UTC): ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`)
 
     const jobsByStatus = await Job.aggregate([
       {
         $match: {
           dateTime: { $gte: startOfMonth, $lte: endOfMonth },
-          status: { $exists: true, $ne: null } // Ensure status exists and is not null
+          status: { $exists: true, $ne: null, $ne: '' } // Ensure status exists, is not null, and is not empty string
         }
       },
       {
@@ -176,7 +193,13 @@ export const getJobsByStatus = async (req, res) => {
             $cond: [
               { $eq: ['$status', 'in progress'] },
               'in-progress', // Normalize 'in progress' to 'in-progress'
-              '$status'
+              {
+                $cond: [
+                  { $eq: ['$status', 'in-progress'] },
+                  'in-progress',
+                  '$status'
+                ]
+              }
             ]
           },
           count: { $sum: 1 }
@@ -201,11 +224,37 @@ export const getJobsByStatus = async (req, res) => {
       ]
     })
 
+    // Get all jobs with their status to see what's missing
+    const allJobsInMonth = await Job.find({
+      dateTime: { $gte: startOfMonth, $lte: endOfMonth }
+    }).select('jobNumber status dateTime').lean()
+
     console.log(`🔍 [DEBUG getJobsByStatus] Total jobs in month: ${totalJobsInMonth}`)
     console.log(`🔍 [DEBUG getJobsByStatus] Jobs with status: ${totalJobsInMonth - jobsWithoutStatus}`)
     console.log(`🔍 [DEBUG getJobsByStatus] Jobs without status: ${jobsWithoutStatus}`)
+    console.log(`🔍 [DEBUG getJobsByStatus] All jobs status details:`, allJobsInMonth.map(j => ({
+      jobNumber: j.jobNumber,
+      status: j.status || 'NULL/UNDEFINED',
+      dateTime: j.dateTime
+    })))
     console.log(`🔍 [DEBUG getJobsByStatus] Result groups:`, JSON.stringify(jobsByStatus))
     console.log(`🔍 [DEBUG getJobsByStatus] Status breakdown:`, jobsByStatus.map(s => `${s._id}: ${s.count}`).join(', '))
+    
+    // Check if there are other status values that might be filtered out
+    const allStatusValues = await Job.aggregate([
+      {
+        $match: {
+          dateTime: { $gte: startOfMonth, $lte: endOfMonth }
+        }
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ])
+    console.log(`🔍 [DEBUG getJobsByStatus] All status values (including null):`, allStatusValues)
 
     res.json({
       success: true,
