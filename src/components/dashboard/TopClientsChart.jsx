@@ -60,6 +60,9 @@ export default function TopClientsChart({ data, loading = false, sortBy = 'reven
   const names = chartData.map(item => item.name)
   const values = chartData.map(item => item.value)
 
+  // Find max value for proper scaling
+  const maxValue = Math.max(...values, 0)
+
   const option = {
     backgroundColor: 'transparent',
     tooltip: {
@@ -99,6 +102,8 @@ export default function TopClientsChart({ data, loading = false, sortBy = 'reven
     },
     xAxis: {
       type: 'value',
+      min: 0,
+      max: maxValue > 0 ? undefined : 100, // Set default max if no data
       axisLine: {
         show: false
       },

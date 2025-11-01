@@ -12,5 +12,5 @@ export { default as ShipsByPortChart } from './ShipsByPortChart'
 export { default as RecentActivity } from './RecentActivity'
 export { default as InvoiceOverview } from './InvoiceOverview'
 export { default as VesselSchedule } from './VesselSchedule'
-export { default as JobsPerMonthChart } from './JobsPerMonthChart'
+export { default as JobsByMonthGroupedChart } from './JobsByMonthGroupedChart'
 

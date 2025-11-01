@@ -11,10 +11,15 @@ const STATUS_COLORS = {
     gradient: ['#FDE047', '#EAB308', '#CA8A04'],
     shadow: 'rgba(234, 179, 8, 0.4)'
   },
-  'in progress': {
-    primary: '#3B82F6',
-    gradient: ['#60A5FA', '#3B82F6', '#1D4ED8'],
-    shadow: 'rgba(59, 130, 246, 0.4)'
+  'in-progress': {
+    primary: '#7C3AED',
+    gradient: ['#9333EA', '#7C3AED', '#6B21A8'],
+    shadow: 'rgba(124, 58, 237, 0.4)'
+  },
+  'in progress': { // Mantener compatibilidad con formato antiguo
+    primary: '#7C3AED',
+    gradient: ['#9333EA', '#7C3AED', '#6B21A8'],
+    shadow: 'rgba(124, 58, 237, 0.4)'
   },
   completed: {
     primary: '#22C55E',
@@ -43,9 +48,20 @@ export default function JobsByStatusChart({ data, loading = false }) {
   const chartData = data.map(item => {
     const statusKey = item._id
     const colorConfig = STATUS_COLORS[statusKey] || { primary: '#6b7280', gradient: ['#6b7280'], shadow: 'rgba(107, 114, 128, 0.4)' }
-    
+
+    // Normalizar el nombre del status para visualización
+    let displayName = item._id || 'Unknown'
+    if (displayName === 'in-progress') {
+      displayName = 'In Progress'
+    } else {
+      // Capitalizar primera letra de cada palabra
+      displayName = displayName.split('-').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ')
+    }
+
     return {
-      name: item._id ? item._id.charAt(0).toUpperCase() + item._id.slice(1) : 'Unknown',
+      name: displayName,
       value: item.count,
       itemStyle: {
         color: {

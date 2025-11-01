@@ -15,7 +15,8 @@ import {
   getInvoiceOverview,
   getVesselSchedule,
   getJobsPerMonth,
-  getJobsByClient
+  getJobsByClient,
+  getJobsByMonthGrouped
 } from '../controllers/dashboardController.js'
 import { authenticate } from '../middleware/authMiddleware.js'
 
@@ -36,6 +37,7 @@ router.get('/invoice-overview', getInvoiceOverview)
 router.get('/vessel-schedule', getVesselSchedule)
 router.get('/jobs-per-month', getJobsPerMonth)
 router.get('/jobs-by-client', getJobsByClient)
+router.get('/jobs-by-month-grouped', getJobsByMonthGrouped)
 
 export default router
 

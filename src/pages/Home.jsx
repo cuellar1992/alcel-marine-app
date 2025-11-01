@@ -14,8 +14,8 @@ import {
   ShipsByPortChart,
   RecentActivity,
   InvoiceOverview,
-  VesselSchedule,
-  JobsPerMonthChart
+  JobsByMonthGroupedChart,
+  VesselSchedule
 } from '../components/dashboard'
 import { useDashboardCache } from '../context/DashboardCacheContext'
 import {
@@ -101,9 +101,9 @@ export default function Home() {
         <InvoiceOverview data={cache?.invoiceOverview || []} loading={loading} />
       </div>
 
-      {/* Jobs Per Month - Full Width */}
+      {/* Jobs by Month Grouped - Full Width */}
       <div className="mb-8">
-        <JobsPerMonthChart data={cache?.jobsPerMonth || []} loading={loading} />
+        <JobsByMonthGroupedChart data={cache?.jobsByMonthGrouped || []} loading={loading} />
       </div>
 
       {/* Vessel Schedule - Full Width */}

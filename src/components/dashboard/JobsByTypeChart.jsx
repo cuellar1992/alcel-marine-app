@@ -5,43 +5,85 @@
 
 import ReactECharts from 'echarts-for-react'
 
-// Colores específicos para cada tipo de trabajo con gradientes y sombras
-const JOB_TYPE_COLORS = {
-  'Bunker': {
+// Paleta de colores vibrantes para asignación dinámica
+const COLOR_PALETTE = [
+  {
     primary: '#3B82F6',
     gradient: ['#60A5FA', '#3B82F6', '#1D4ED8'],
     shadow: 'rgba(59, 130, 246, 0.4)'
   },
-  'Claims': {
+  {
     primary: '#9333EA',
     gradient: ['#A855F7', '#9333EA', '#7C3AED'],
     shadow: 'rgba(147, 51, 234, 0.4)'
   },
-  'Ballast': {
+  {
     primary: '#22C55E',
     gradient: ['#4ADE80', '#22C55E', '#16A34A'],
     shadow: 'rgba(34, 197, 94, 0.4)'
   },
-  'Cargo': {
+  {
     primary: '#F97316',
     gradient: ['#FB923C', '#F97316', '#EA580C'],
     shadow: 'rgba(249, 115, 22, 0.4)'
   },
-  'Survey': {
+  {
     primary: '#EAB308',
     gradient: ['#FDE047', '#EAB308', '#CA8A04'],
     shadow: 'rgba(234, 179, 8, 0.4)'
   },
-  'Inspection': {
+  {
     primary: '#14B8A6',
     gradient: ['#2DD4BF', '#14B8A6', '#0D9488'],
     shadow: 'rgba(20, 184, 166, 0.4)'
   },
-  'Other': {
+  {
     primary: '#DC2626',
     gradient: ['#F87171', '#DC2626', '#B91C1C'],
     shadow: 'rgba(220, 38, 38, 0.4)'
+  },
+  {
+    primary: '#EC4899',
+    gradient: ['#F472B6', '#EC4899', '#DB2777'],
+    shadow: 'rgba(236, 72, 153, 0.4)'
+  },
+  {
+    primary: '#8B5CF6',
+    gradient: ['#A78BFA', '#8B5CF6', '#7C3AED'],
+    shadow: 'rgba(139, 92, 246, 0.4)'
+  },
+  {
+    primary: '#06B6D4',
+    gradient: ['#22D3EE', '#06B6D4', '#0891B2'],
+    shadow: 'rgba(6, 182, 212, 0.4)'
+  },
+  {
+    primary: '#10B981',
+    gradient: ['#34D399', '#10B981', '#059669'],
+    shadow: 'rgba(16, 185, 129, 0.4)'
+  },
+  {
+    primary: '#F59E0B',
+    gradient: ['#FBBF24', '#F59E0B', '#D97706'],
+    shadow: 'rgba(245, 158, 11, 0.4)'
   }
+]
+
+// Función para generar un color consistente basado en el nombre del tipo
+const getColorForJobType = (typeName, index) => {
+  // Usar el índice como primera opción para asegurar variedad
+  // pero si hay más tipos que colores, usar hash del nombre
+  if (index < COLOR_PALETTE.length) {
+    return COLOR_PALETTE[index]
+  }
+
+  // Hash simple del nombre para colores consistentes
+  let hash = 0
+  for (let i = 0; i < typeName.length; i++) {
+    hash = typeName.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const colorIndex = Math.abs(hash) % COLOR_PALETTE.length
+  return COLOR_PALETTE[colorIndex]
 }
 
 export default function JobsByTypeChart({ data, loading = false }) {
@@ -57,10 +99,10 @@ export default function JobsByTypeChart({ data, loading = false }) {
   }
 
   // Preparar datos del gráfico con gradientes
-  const chartData = data.map((item) => {
+  const chartData = data.map((item, index) => {
     const typeName = item._id ? item._id.charAt(0).toUpperCase() + item._id.slice(1) : 'Other'
-    const colorConfig = JOB_TYPE_COLORS[typeName] || { primary: '#6B7280', gradient: ['#6B7280'], shadow: 'rgba(107, 114, 128, 0.4)' }
-    
+    const colorConfig = getColorForJobType(typeName, index)
+
     return {
       name: typeName,
       value: item.count,

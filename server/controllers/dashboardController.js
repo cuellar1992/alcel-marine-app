@@ -295,16 +295,16 @@ export const getTopClients = async (req, res) => {
     const limit = parseInt(req.query.limit) || 5
     const sortBy = req.query.sortBy || 'revenue' // revenue or count
 
-    // Get current month date range
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+    // Get current year date range
+    const currentYear = new Date().getFullYear()
+    const startOfYear = new Date(currentYear, 0, 1) // January 1st
+    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999) // December 31st
 
-    // Get jobs by client (current month only) - Marine Non-Claims
+    // Get jobs by client (current year only) - Marine Non-Claims
     const jobsByClient = await Job.aggregate([
       {
         $match: {
-          dateTime: { $gte: startOfMonth, $lte: endOfMonth }
+          dateTime: { $gte: startOfYear, $lte: endOfYear }
         }
       },
       {
@@ -316,11 +316,11 @@ export const getTopClients = async (req, res) => {
       }
     ])
 
-    // Get claims by client (current month only) - Marine Claims & Inspections
+    // Get claims by client (current year only) - Marine Claims & Inspections
     const claimsByClient = await Claim.aggregate([
       {
         $match: {
-          registrationDate: { $gte: startOfMonth, $lte: endOfMonth }
+          registrationDate: { $gte: startOfYear, $lte: endOfYear }
         }
       },
       {
@@ -646,11 +646,11 @@ export const getVesselSchedule = async (req, res) => {
       .select('jobNumber vesselName port dateTime status jobType clientName')
       .lean()
 
-    // Fetch Claims within range (using registrationDate)
+    // Fetch Claims within range (using siteInspectionDateTime)
     const claims = await Claim.find({
-      registrationDate: { $gte: startDate, $lte: endDate }
+      siteInspectionDateTime: { $gte: startDate, $lte: endDate }
     })
-      .select('jobNumber claimName location registrationDate clientName')
+      .select('jobNumber claimName location siteInspectionDateTime clientName')
       .lean()
 
     // Normalize claims to job-like shape for frontend component
@@ -659,7 +659,7 @@ export const getVesselSchedule = async (req, res) => {
       jobNumber: c.jobNumber,
       vesselName: c.claimName, // display claim name as title
       port: c.location,
-      dateTime: c.registrationDate,
+      dateTime: c.siteInspectionDateTime,
       status: undefined,
       jobType: 'Claims',
       clientName: c.clientName,
@@ -791,6 +791,92 @@ export const getJobsByClient = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching jobs by client',
+      error: error.message
+    })
+  }
+}
+
+// @desc    Get jobs grouped by month and form type (Non-Claims vs Claims)
+// @route   GET /api/dashboard/jobs-by-month-grouped?year=2024
+// @access  Public
+export const getJobsByMonthGrouped = async (req, res) => {
+  try {
+    const year = parseInt(req.query.year) || new Date().getFullYear()
+    
+    // Use UTC to avoid timezone issues
+    const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0))
+    const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999))
+
+    // Jobs by month and jobType (Marine Non-Claims Services)
+    const jobsByMonth = await Job.aggregate([
+      {
+        $match: {
+          dateTime: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: { 
+            month: { $month: '$dateTime' },
+            jobType: '$jobType'
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          month: '$_id.month',
+          jobType: '$_id.jobType',
+          formType: 'Non-Claims',
+          count: 1,
+          _id: 0
+        }
+      },
+      {
+        $sort: { month: 1, jobType: 1 }
+      }
+    ])
+
+    // Claims by month (Marine Claims & Inspections)
+    const claimsByMonth = await Claim.aggregate([
+      {
+        $match: {
+          registrationDate: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: { 
+            month: { $month: '$registrationDate' }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          month: '$_id.month',
+          jobType: 'Claims',
+          formType: 'Claims',
+          count: 1,
+          _id: 0
+        }
+      },
+      {
+        $sort: { month: 1 }
+      }
+    ])
+
+    // Combine results
+    const allJobs = [...jobsByMonth, ...claimsByMonth]
+
+    res.json({
+      success: true,
+      data: allJobs
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching jobs by month grouped',
       error: error.message
     })
   }

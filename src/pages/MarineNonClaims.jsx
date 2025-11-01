@@ -1532,43 +1532,51 @@ export default function MarineNonClaims() {
                 </p>
               </div>
 
-              {viewingJob.etb && (
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">ETB (Est. Time of Berthing)</p>
-                  <p className="text-base text-gray-300">
-                    {new Date(viewingJob.etb).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    {new Date(viewingJob.etb).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-              )}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">ETB (Est. Time of Berthing)</p>
+                {viewingJob.etb ? (
+                  <>
+                    <p className="text-base text-gray-300">
+                      {new Date(viewingJob.etb).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {new Date(viewingJob.etb).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-base text-gray-500 italic">Not set</p>
+                )}
+              </div>
 
-              {viewingJob.etd && (
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">ETD (Est. Time of Departure)</p>
-                  <p className="text-base text-gray-300">
-                    {new Date(viewingJob.etd).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    {new Date(viewingJob.etd).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-              )}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">ETD (Est. Time of Departure)</p>
+                {viewingJob.etd ? (
+                  <>
+                    <p className="text-base text-gray-300">
+                      {new Date(viewingJob.etd).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {new Date(viewingJob.etd).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-base text-gray-500 italic">Not set</p>
+                )}
+              </div>
 
               <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Port</p>

@@ -437,6 +437,10 @@ export const dashboardAPI = {
   
   // Get jobs by client
   getJobsByClient: () => apiCall('/dashboard/jobs-by-client'),
+  
+  // Get jobs by month grouped by form type
+  getJobsByMonthGrouped: (year = new Date().getFullYear()) => 
+    apiCall(`/dashboard/jobs-by-month-grouped?year=${year}`),
 }
 
 // Users API (Admin only)

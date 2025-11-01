@@ -50,7 +50,8 @@ export const DashboardCacheProvider = ({ children }) => {
         activityRes,
         invoiceRes,
         scheduleRes,
-        monthlyRes
+        monthlyRes,
+        groupedRes
       ] = await Promise.all([
         dashboardAPI.getStats(),
         dashboardAPI.getJobsByStatus(),
@@ -61,7 +62,8 @@ export const DashboardCacheProvider = ({ children }) => {
         dashboardAPI.getRecentActivity(10),
         dashboardAPI.getInvoiceOverview(),
         dashboardAPI.getVesselSchedule(14),
-        dashboardAPI.getJobsPerMonth(new Date().getFullYear())
+        dashboardAPI.getJobsPerMonth(new Date().getFullYear()),
+        dashboardAPI.getJobsByMonthGrouped(new Date().getFullYear())
       ]);
 
       const dashboardData = {
@@ -74,7 +76,8 @@ export const DashboardCacheProvider = ({ children }) => {
         recentActivity: activityRes.success ? activityRes.data : [],
         invoiceOverview: invoiceRes.success ? invoiceRes.data : [],
         vesselSchedule: scheduleRes.success ? scheduleRes.data : [],
-        jobsPerMonth: monthlyRes.success ? monthlyRes.data : []
+        jobsPerMonth: monthlyRes.success ? monthlyRes.data : [],
+        jobsByMonthGrouped: groupedRes.success ? groupedRes.data : []
       };
 
       setCache({
