@@ -66,6 +66,9 @@ export const DashboardCacheProvider = ({ children }) => {
         dashboardAPI.getJobsByMonthGrouped(new Date().getFullYear())
       ]);
 
+      // DEBUG: Ver qué devuelve la API
+      console.log('🔍 [DashboardCache] API Response jobsByStatus:', statusRes)
+
       const dashboardData = {
         stats: statsRes.success ? statsRes.data : null,
         jobsByStatus: statusRes.success ? statusRes.data : [],
@@ -79,6 +82,8 @@ export const DashboardCacheProvider = ({ children }) => {
         jobsPerMonth: monthlyRes.success ? monthlyRes.data : [],
         jobsByMonthGrouped: groupedRes.success ? groupedRes.data : []
       };
+
+      console.log('🔍 [DashboardCache] jobsByStatus en dashboardData:', dashboardData.jobsByStatus)
 
       setCache({
         data: dashboardData,
