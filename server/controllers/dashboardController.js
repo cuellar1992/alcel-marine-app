@@ -146,20 +146,34 @@ export const getDashboardStats = async (req, res) => {
 // @access  Public
 export const getJobsByStatus = async (req, res) => {
   try {
-    // Get current month date range
+    // Get current month date range using Australia/Sydney timezone
+    // This ensures consistency for users in Sydney timezone
     const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    
+    // Start of month in local timezone (first day, 00:00:00 local)
+    const startOfMonth = new Date(year, month, 1, 0, 0, 0, 0)
+    
+    // End of month in local timezone (last day, 23:59:59.999 local)
+    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
 
     const jobsByStatus = await Job.aggregate([
       {
         $match: {
-          dateTime: { $gte: startOfMonth, $lte: endOfMonth }
+          dateTime: { $gte: startOfMonth, $lte: endOfMonth },
+          status: { $exists: true, $ne: null } // Ensure status exists and is not null
         }
       },
       {
         $group: {
-          _id: '$status',
+          _id: {
+            $cond: [
+              { $eq: ['$status', 'in progress'] },
+              'in-progress', // Normalize 'in progress' to 'in-progress'
+              '$status'
+            ]
+          },
           count: { $sum: 1 }
         }
       },
@@ -167,6 +181,24 @@ export const getJobsByStatus = async (req, res) => {
         $sort: { count: -1 }
       }
     ])
+
+    // Debug: Check total jobs in month and jobs without status
+    const totalJobsInMonth = await Job.countDocuments({
+      dateTime: { $gte: startOfMonth, $lte: endOfMonth }
+    })
+    
+    const jobsWithoutStatus = await Job.countDocuments({
+      dateTime: { $gte: startOfMonth, $lte: endOfMonth },
+      $or: [
+        { status: { $exists: false } },
+        { status: null },
+        { status: '' }
+      ]
+    })
+
+    console.log(`[Jobs By Status] Total jobs in month: ${totalJobsInMonth}, Jobs with status: ${totalJobsInMonth - jobsWithoutStatus}, Jobs without status: ${jobsWithoutStatus}`)
+    console.log(`[Jobs By Status] Date range: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`)
+    console.log(`[Jobs By Status] Status groups:`, jobsByStatus.map(s => `${s._id}: ${s.count}`).join(', '))
 
     res.json({
       success: true,
