@@ -158,12 +158,6 @@ export default function JobsByMonthGroupedChart({ data, loading = false }) {
   // Preparar datos para el gráfico
   const months = Array.from(monthDataMap.values()).map(m => m.monthName)
   
-  // Debug: mostrar todos los tipos de trabajo que están llegando
-  console.log('Todos los tipos de trabajo:', jobTypesArray.map(key => {
-    const [formType, ...jobTypeParts] = key.split('::')
-    return { key, formType, jobType: jobTypeParts.join('::') }
-  }))
-  
   // Crear series para cada tipo de trabajo
   const series = jobTypesArray.map(jobTypeKey => {
     const [formType, ...jobTypeParts] = jobTypeKey.split('::')
@@ -176,11 +170,6 @@ export default function JobsByMonthGroupedChart({ data, loading = false }) {
 
     // Obtener color único para este tipo de trabajo
     const color = getColorForJobType(formType, jobType)
-    
-    // Debug para todos los tipos de trabajo que contengan wtb o bis
-    if (jobType?.toLowerCase().includes('wtb') || jobType?.toLowerCase().includes('wbt') || jobType?.toLowerCase().includes('bis')) {
-      console.log('Tipo encontrado:', { jobType, formType, color, normalized: jobType?.toLowerCase().trim() })
-    }
 
     return {
       name: formType === 'Claims' ? 'Claims' : jobType,

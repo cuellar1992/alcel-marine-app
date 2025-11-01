@@ -31,11 +31,9 @@ export const DashboardCacheProvider = ({ children }) => {
   const fetchDashboardData = useCallback(async (forceRefresh = false) => {
     // Si el caché es válido y no es refresh forzado, retornar caché
     if (!forceRefresh && isCacheValid()) {
-      console.log('📦 Using cached dashboard data');
       return { success: true, data: cache.data, fromCache: true };
     }
 
-    console.log('🔄 Fetching fresh dashboard data');
     setCache(prev => ({ ...prev, loading: true }));
 
     try {

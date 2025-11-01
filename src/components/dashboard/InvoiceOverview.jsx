@@ -52,16 +52,6 @@ export default function InvoiceOverview({ data, loading = false }) {
     return totals.amount > 0 ? ((value / totals.amount) * 100).toFixed(1) : 0
   }
 
-  // Debug log (can be removed in production)
-  console.log('Invoice Overview Data:', {
-    raw: data,
-    normalized: invoiceData,
-    notIssued,
-    issued,
-    paid,
-    totals
-  })
-
   return (
     <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
       <div className="flex items-center justify-between mb-6">
