@@ -5,16 +5,15 @@
 
 import Job from '../models/Job.js'
 import Claim from '../models/Claim.js'
+import { getSydneyMonthRange, getSydneyYearRange } from '../utils/timezoneUtils.js'
 
 // @desc    Get dashboard statistics
 // @route   GET /api/dashboard/stats
 // @access  Public
 export const getDashboardStats = async (req, res) => {
   try {
-    // Get current year date range
-    const currentYear = new Date().getFullYear()
-    const startOfYear = new Date(currentYear, 0, 1) // January 1st
-    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999) // December 31st
+    // Get current year date range using Australia/Sydney timezone
+    const { startOfYear, endOfYear } = getSydneyYearRange()
 
     // Get total jobs and claims for current year
     const totalJobs = await Job.countDocuments({
@@ -147,44 +146,13 @@ export const getDashboardStats = async (req, res) => {
 export const getJobsByStatus = async (req, res) => {
   try {
     // Get current month date range using Australia/Sydney timezone
-    // Convert UTC time to Sydney time to get the correct month
-    const nowUTC = new Date()
-    const sydneyTimeString = nowUTC.toLocaleString('en-US', {
-      timeZone: 'Australia/Sydney',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    })
-
-    // Parse the Sydney time to get year and month
-    const [datePart] = sydneyTimeString.split(', ')
-    const [month, day, year] = datePart.split('/')
-    const sydneyYear = parseInt(year)
-    const sydneyMonth = parseInt(month) - 1 // JavaScript months are 0-indexed
-
-    // Create start of month in Sydney timezone, then convert to UTC for MongoDB query
-    // Sydney is UTC+11 (or UTC+10 during DST), so we subtract 11 hours to get UTC equivalent
-    const startOfMonthSydney = new Date(Date.UTC(sydneyYear, sydneyMonth, 1, 0, 0, 0, 0))
-    const startOfMonth = new Date(startOfMonthSydney.getTime() - (11 * 60 * 60 * 1000))
-
-    // End of month in Sydney timezone
-    const endOfMonthSydney = new Date(Date.UTC(sydneyYear, sydneyMonth + 1, 0, 23, 59, 59, 999))
-    const endOfMonth = new Date(endOfMonthSydney.getTime() - (11 * 60 * 60 * 1000))
-
-    console.log(`🔍 [DEBUG getJobsByStatus] Current UTC: ${nowUTC.toISOString()}`)
-    console.log(`🔍 [DEBUG getJobsByStatus] Sydney time: ${sydneyTimeString}`)
-    console.log(`🔍 [DEBUG getJobsByStatus] Sydney Year: ${sydneyYear}, Month: ${sydneyMonth}`)
-    console.log(`🔍 [DEBUG getJobsByStatus] Date range (UTC): ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`)
+    const { startOfMonth, endOfMonth } = getSydneyMonthRange()
 
     const jobsByStatus = await Job.aggregate([
       {
         $match: {
           dateTime: { $gte: startOfMonth, $lte: endOfMonth },
-          status: { $exists: true, $ne: null, $ne: '' } // Ensure status exists, is not null, and is not empty string
+          status: { $exists: true, $ne: null, $ne: '' }
         }
       },
       {
@@ -192,7 +160,7 @@ export const getJobsByStatus = async (req, res) => {
           _id: {
             $cond: [
               { $eq: ['$status', 'in progress'] },
-              'in-progress', // Normalize 'in progress' to 'in-progress'
+              'in-progress',
               {
                 $cond: [
                   { $eq: ['$status', 'in-progress'] },
@@ -209,52 +177,6 @@ export const getJobsByStatus = async (req, res) => {
         $sort: { count: -1 }
       }
     ])
-
-    // Debug: Check total jobs in month and jobs without status
-    const totalJobsInMonth = await Job.countDocuments({
-      dateTime: { $gte: startOfMonth, $lte: endOfMonth }
-    })
-
-    const jobsWithoutStatus = await Job.countDocuments({
-      dateTime: { $gte: startOfMonth, $lte: endOfMonth },
-      $or: [
-        { status: { $exists: false } },
-        { status: null },
-        { status: '' }
-      ]
-    })
-
-    // Get all jobs with their status to see what's missing
-    const allJobsInMonth = await Job.find({
-      dateTime: { $gte: startOfMonth, $lte: endOfMonth }
-    }).select('jobNumber status dateTime').lean()
-
-    console.log(`🔍 [DEBUG getJobsByStatus] Total jobs in month: ${totalJobsInMonth}`)
-    console.log(`🔍 [DEBUG getJobsByStatus] Jobs with status: ${totalJobsInMonth - jobsWithoutStatus}`)
-    console.log(`🔍 [DEBUG getJobsByStatus] Jobs without status: ${jobsWithoutStatus}`)
-    console.log(`🔍 [DEBUG getJobsByStatus] All jobs status details:`, allJobsInMonth.map(j => ({
-      jobNumber: j.jobNumber,
-      status: j.status || 'NULL/UNDEFINED',
-      dateTime: j.dateTime
-    })))
-    console.log(`🔍 [DEBUG getJobsByStatus] Result groups:`, JSON.stringify(jobsByStatus))
-    console.log(`🔍 [DEBUG getJobsByStatus] Status breakdown:`, jobsByStatus.map(s => `${s._id}: ${s.count}`).join(', '))
-    
-    // Check if there are other status values that might be filtered out
-    const allStatusValues = await Job.aggregate([
-      {
-        $match: {
-          dateTime: { $gte: startOfMonth, $lte: endOfMonth }
-        }
-      },
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 }
-        }
-      }
-    ])
-    console.log(`🔍 [DEBUG getJobsByStatus] All status values (including null):`, allStatusValues)
 
     res.json({
       success: true,
@@ -383,10 +305,8 @@ export const getTopClients = async (req, res) => {
     const limit = parseInt(req.query.limit) || 5
     const sortBy = req.query.sortBy || 'revenue' // revenue or count
 
-    // Get current year date range
-    const currentYear = new Date().getFullYear()
-    const startOfYear = new Date(currentYear, 0, 1) // January 1st
-    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999) // December 31st
+    // Get current year date range using Australia/Sydney timezone
+    const { startOfYear, endOfYear } = getSydneyYearRange()
 
     // Get jobs by client (current year only) - Marine Non-Claims
     const jobsByClient = await Job.aggregate([
@@ -486,10 +406,8 @@ export const getTopClients = async (req, res) => {
 // @access  Public
 export const getJobsByType = async (req, res) => {
   try {
-    // Get current month date range
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+    // Get current month date range using Australia/Sydney timezone
+    const { startOfMonth, endOfMonth } = getSydneyMonthRange()
 
     // Get jobs grouped by job type (current month only)
     const jobsByType = await Job.aggregate([
@@ -541,10 +459,8 @@ export const getJobsByType = async (req, res) => {
 // @access  Public
 export const getShipsByPort = async (req, res) => {
   try {
-    // Get current year date range
-    const currentYear = new Date().getFullYear()
-    const startOfYear = new Date(currentYear, 0, 1) // January 1st
-    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999) // December 31st
+    // Get current year date range using Australia/Sydney timezone
+    const { startOfYear, endOfYear } = getSydneyYearRange()
 
     const shipsByPort = await Job.aggregate([
       {
@@ -630,10 +546,8 @@ export const getRecentActivity = async (req, res) => {
 // @access  Public
 export const getInvoiceOverview = async (req, res) => {
   try {
-    // Get current month date range
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+    // Get current month date range using Australia/Sydney timezone
+    const { startOfMonth, endOfMonth } = getSydneyMonthRange()
 
     // Jobs invoice status (current month only)
     const jobsInvoiceStatus = await Job.aggregate([

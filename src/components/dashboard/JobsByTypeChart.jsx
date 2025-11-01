@@ -282,7 +282,7 @@ export default function JobsByTypeChart({ data, loading = false }) {
         </div>
         <h3 className="text-lg font-semibold text-white">Jobs by Type</h3>
         <div className="ml-auto text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
-          Real-time
+          Monthly
         </div>
       </div>
       

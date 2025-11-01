@@ -34,11 +34,6 @@ const STATUS_COLORS = {
 }
 
 export default function JobsByStatusChart({ data, loading = false }) {
-  // DEBUG: Log para ver qué datos recibe el componente
-  console.log('🔍 [JobsByStatusChart] Data recibida:', data)
-  console.log('🔍 [JobsByStatusChart] Total items:', data?.length)
-  console.log('🔍 [JobsByStatusChart] Desglose:', data?.map(item => `${item._id}: ${item.count}`).join(', '))
-
   if (loading) {
     return (
       <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
@@ -244,7 +239,7 @@ export default function JobsByStatusChart({ data, loading = false }) {
         </div>
         <h3 className="text-lg font-semibold text-white">Jobs by Status</h3>
         <div className="ml-auto text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
-          Real-time
+          Monthly
         </div>
       </div>
       

@@ -66,8 +66,8 @@ export default function InvoiceOverview({ data, loading = false }) {
     <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white">Invoice Overview</h3>
-        <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded">
-          {totals.count} total
+        <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
+          Monthly
         </span>
       </div>
       
